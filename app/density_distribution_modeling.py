@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Density-filled visualization module.
+Density-based pore distribution modeling module for CSA cement-based insulating boards.
+
+Generates layered computational models representing spatial variation in pore 
+density and size distribution throughout the board thickness and cross-sectional 
+area, based on experimental mercury intrusion porosimetry data.
 """
 
 import numpy as np
@@ -58,13 +62,15 @@ def create_density_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3
             # Create a gradient based on height (more pores at certain levels)
             height_factor = 0.5 + 0.5 * np.sin(np.pi * (z_mid + 0.4) / 0.8)
 
-            # Create mesh grid for this layer (rectangular shape)
-            resolution_x = 40  # More resolution in X direction (160mm)
-            resolution_y = 15  # Less resolution in Y direction (40mm)
+            # Create mesh grid for this layer (square shape now)
+            resolution_x = 40  # Resolution in X direction (160mm)
+            # Same resolution in Y direction (160mm) - changed from 15 to 40
+            resolution_y = 40
             # Length dimension
             x_layer = np.linspace(-1.85, 1.85, resolution_x)
-            # Width dimension
-            y_layer = np.linspace(-0.35, 0.35, resolution_y)
+            # Width dimension - now same as length
+            # Changed from (-0.35, 0.35) to (-1.85, 1.85)
+            y_layer = np.linspace(-1.85, 1.85, resolution_y)
             X_layer, Y_layer = np.meshgrid(x_layer, y_layer)
 
             # Create density values for this layer
@@ -72,14 +78,15 @@ def create_density_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3
 
             for i_y in range(resolution_y):
                 for i_x in range(resolution_x):
-                    # Calculate distance from center (considering rectangular shape)
+                    # Calculate distance from center (considering square shape now)
                     # Normalize distances based on the actual dimensions
                     # Normalize by length
                     dist_x_norm = abs(X_layer[i_y, i_x]) / 1.85
-                    # Normalize by width
-                    dist_y_norm = abs(Y_layer[i_y, i_x]) / 0.35
+                    # Normalize by width (now same as length)
+                    # Changed from 0.35 to 1.85
+                    dist_y_norm = abs(Y_layer[i_y, i_x]) / 1.85
 
-                    # Combined distance metric for rectangular shape
+                    # Combined distance metric for square shape
                     dist_from_center = np.sqrt(
                         (dist_x_norm**2 + dist_y_norm**2) / 2)
 
@@ -136,22 +143,11 @@ def create_density_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3
                                    alpha=0.6,
                                    edgecolors='none')
 
-        # Set title
-        ax.set_title(f"{name}: Density-Filled Pore Distribution", fontsize=11,
-                     color='#333333', weight='bold')
-
-    # Add overall title and info
-    plt.suptitle('Density-Filled Pore Distribution Analysis',
-                 fontsize=16, fontweight='bold', color='#333333', y=0.95)
-
-    # Add information text
-    info_text = ("Layered density visualization showing pore distribution patterns.\n"
-                 "Density varies based on experimental intrusion data and spatial distribution.")
-    plt.figtext(0.5, 0.02, info_text, ha='center', fontsize=10,
-                bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.5'))
+        # Add sample label
+        ax.text2D(0.05, 0.95, name, transform=ax.transAxes, fontsize=12,
+                  fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.88, bottom=0.12)
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Density-filled visualization saved to {output_file}")
     plt.close()

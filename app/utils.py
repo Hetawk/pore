@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Common utilities and shared functions for pore visualization.
+Common utilities and shared functions for 3D pore structure modeling in 
+calcium sulfoaluminate cement-based thermal insulating boards.
+
+This module provides geometric framework and pore generation algorithms 
+for computational modeling of experimental mercury intrusion porosimetry data.
 """
 
 import numpy as np
@@ -9,14 +13,31 @@ from tqdm import tqdm
 
 
 def plot_orange_prism_frame(ax, color='#FF8C00', linewidth=1.5, alpha=0.8):
-    """Draw the clean orange prism frame for 160x40x40mm board (laying horizontally)"""
-    # Define the 8 corners of the rectangular prism
-    # 160mm length (X), 40mm width (Y), 40mm height (Z)
-    # Scale: 160mm → 4.0, 40mm → 1.0, 40mm → 1.0
-    x_half = 2.0  # Half of 160mm scaled
-    y_half = 0.5  # Half of 40mm scaled
-    z_half = 0.5  # Half of 40mm scaled
+    """
+    Draw the geometric framework representing the CSA cement-based insulating board boundaries.
 
+    Creates a 3D wireframe representation of the experimental board dimensions
+    for visualization of pore structures within the material volume.
+
+    Parameters:
+    -----------
+    ax : matplotlib 3D axis
+        The 3D plotting axis for rendering the board frame
+    color : str, default='#FF8C00'
+        Frame color (orange for visual clarity)
+    linewidth : float, default=1.5
+        Line thickness for frame edges
+    alpha : float, default=0.8
+        Transparency level for frame visibility
+    """
+    # Define the 8 vertices of the rectangular prism representing the insulating board
+    # Physical dimensions: 160mm length (X), 160mm width (Y), 40mm thickness (Z)
+    # Normalized coordinate system: 160mm → 2.0, 40mm → 0.5
+    x_half = 2.0  # Half-length in normalized coordinates (80mm actual)
+    y_half = 2.0  # Half-width in normalized coordinates (80mm actual)
+    z_half = 0.5  # Half-thickness in normalized coordinates (20mm actual)
+
+    # Vertex coordinates for the insulating board geometry
     corners = np.array([
         [-x_half, -y_half, -z_half], [x_half, -y_half, -z_half],
         [x_half, y_half, -z_half], [-x_half, y_half, -z_half],
@@ -36,45 +57,81 @@ def plot_orange_prism_frame(ax, color='#FF8C00', linewidth=1.5, alpha=0.8):
                 [corners[edge[0], 2], corners[edge[1], 2]],
                 color=color, linewidth=linewidth, alpha=alpha)
 
-    # Set axis limits to ensure the box is fully visible
-    ax.set_xlim(-2.2, 2.2)
-    ax.set_ylim(-0.7, 0.7)
-    ax.set_zlim(-0.7, 0.7)
+    # Set visualization boundaries to encompass the entire board geometry
+    ax.set_xlim(-2.2, 2.2)  # X-axis range (length dimension)
+    ax.set_ylim(-2.2, 2.2)  # Y-axis range (width dimension)
+    ax.set_zlim(-0.7, 0.7)  # Z-axis range (thickness dimension)
 
 
 def setup_clean_axes(ax):
-    """Setup clean axes without background, grid, or ticks"""
-    # Remove all default axes elements for clean appearance
+    """
+    Configure 3D axes for scientific visualization without visual clutter.
+
+    Removes background grids, tick marks, and axis labels to create clean
+    scientific figures suitable for research publication and analysis.
+
+    Parameters:
+    -----------
+    ax : matplotlib 3D axis
+        The 3D plotting axis to configure for clean visualization
+    """
+    # Remove all default axes elements for clean scientific presentation
     ax.set_axis_off()
 
-    # Make background transparent
+    # Create transparent background for professional appearance
     ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
-    # Remove grid
+    # Disable grid lines for cleaner visualization
     ax.grid(False)
 
-    # Remove ticks for cleaner visualization
+    # Remove tick marks for uncluttered scientific figures
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
 
-    # Set aspect ratio for rectangular prism (160:40:40 = 4:1:1)
-    ax.set_box_aspect([4, 1, 1])
+    # Set aspect ratio matching physical board dimensions (160:160:40 = 4:4:1)
+    ax.set_box_aspect([4, 4, 1])
 
-    # Set viewpoint for isometric left-facing view
+    # Configure isometric viewing angle for optimal 3D perspective
     ax.view_init(elev=30, azim=60)
 
 
 def generate_realistic_pores(diameters, intrusion_values, sample_name, n_pores=800):
-    """Generate realistic pore distribution within the rectangular orange prism bounds (160x40x40mm)"""
+    """
+    Generate realistic 3D pore distribution based on experimental MIP data.
+
+    Creates a spatial distribution of spherical pores within the insulating board
+    volume, with pore sizes and frequencies derived from mercury intrusion 
+    porosimetry measurements. Applies physical constraints to ensure realistic
+    pore placement and avoid edge effects.
+
+    Parameters:
+    -----------
+    diameters : array_like
+        Experimental pore diameter data from MIP testing (micrometers)
+    intrusion_values : array_like
+        Mercury intrusion volume data corresponding to each diameter
+    sample_name : str
+        Board composition identifier (T1, T2, or T3)
+    n_pores : int, default=800
+        Target number of pores to generate for visualization
+
+    Returns:
+    --------
+    tuple
+        (pore_positions, scaled_radii, selected_diameters)
+        - pore_positions: 3D coordinates of pore centers
+        - scaled_radii: Visualization radii in normalized coordinates  
+        - selected_diameters: Actual pore diameters from MIP data
+    """
     print(f"Generating {n_pores} realistic pores for {sample_name}...")
 
-    # Calculate percentage of each pore size from intrusion data
+    # Normalize intrusion data to create probability distribution
     norm_intrusion = intrusion_values / np.sum(intrusion_values)
 
-    # Choose pore diameters based on experimental distribution
+    # Sample pore diameters based on experimental frequency distribution
     indices = np.random.choice(len(diameters), size=n_pores, p=norm_intrusion)
     selected_diameters = diameters[indices]
 
@@ -93,14 +150,15 @@ def generate_realistic_pores(diameters, intrusion_values, sample_name, n_pores=8
             selected_radii) * ((min_radius + max_radius) / 2)
 
     # Generate pore positions within the rectangular orange prism bounds
-    # X: [-1.9, 1.9] (160mm), Y: [-0.4, 0.4] (40mm), Z: [-0.4, 0.4] (40mm)
-    x_bound, y_bound, z_bound = 1.9, 0.4, 0.4
+    # X: [-1.9, 1.9] (160mm), Y: [-1.9, 1.9] (160mm), Z: [-0.4, 0.4] (40mm)
+    x_bound, y_bound, z_bound = 1.9, 1.9, 0.4  # Changed y_bound from 0.4 to 1.9
     pore_positions = []
 
     # Helper function to add a pore with small jitter
     def add_pore_at(x, y, z, jitter=0.05):
         jx = np.random.normal(0, jitter)
-        jy = np.random.normal(0, jitter * 0.5)  # Less jitter in Y direction
+        # Same jitter in Y direction now (changed from jitter * 0.5)
+        jy = np.random.normal(0, jitter)
         jz = np.random.normal(0, jitter * 0.5)  # Less jitter in Z direction
         # Ensure pore stays within rectangular prism bounds
         x = max(min(x + jx, x_bound), -x_bound)
@@ -115,7 +173,7 @@ def generate_realistic_pores(diameters, intrusion_values, sample_name, n_pores=8
         z_val = z_bound * (1 - np.random.exponential(0.3))
         z_val = min(z_bound, max(0.0, z_val))
 
-        # Distribute across the x-y plane (longer in X direction)
+        # Distribute across the x-y plane (now both X and Y are 160mm)
         x = np.random.uniform(-x_bound, x_bound)
         y = np.random.uniform(-y_bound, y_bound)
 

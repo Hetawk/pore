@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Combined pores and sand/dust visualization module.
+Hybrid pore-matrix computational modeling module for CSA cement-based insulating boards.
+
+Generates advanced computational models combining discrete pore structures with
+surrounding matrix material, providing comprehensive representation of both
+macro-porosity and fine-scale material composition.
 """
 
 import numpy as np
@@ -10,13 +14,31 @@ from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes, generate_realistic_pores
 
 
-def create_combined_pores_sand_visualization(diam, intr, sample_name, output_file, sample_color='jet'):
-    """Create visualization combining realistic pores with sand/dust fill"""
+def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_file, sample_color='jet'):
+    """
+    Create hybrid computational model combining discrete pores with matrix material.
+
+    Generates advanced 3D visualization showing both major pore structures and
+    the surrounding granular material matrix, providing comprehensive understanding
+    of the thermal insulating board microstructure.
+
+    Parameters:
+    -----------
+    diam : array_like
+        Experimental pore diameter data from MIP testing
+    intr : array_like
+        Mercury intrusion volume data for pore characterization
+    sample_name : str
+        Board composition identifier (T1, T2, or T3)
+    output_file : str
+        Path for saving the generated hybrid model
+    sample_color : str, default='jet'
+        Colormap for pore visualization
+    """
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
 
-    print(
-        f"\nCreating combined pores + sand visualization for {sample_name}...")
+    print(f"\nCreating hybrid pore-matrix model for {sample_name}...")
 
     # Setup clean axes
     setup_clean_axes(ax)
@@ -29,13 +51,15 @@ def create_combined_pores_sand_visualization(diam, intr, sample_name, output_fil
 
     # Generate more sand particles for better visibility (similar to sand_dust_viz.py)
     total_porosity = np.sum(intr)
-    base_particles = 6000  # Increased for better visibility
+    base_particles = 8000  # Increased for better coverage of the larger 160×160×40mm volume
     sand_particle_count = int(base_particles * (1 + total_porosity / 10))
 
-    # Use full bounds like in sand_dust_viz.py
-    x_sand = np.random.uniform(-2.0, 2.0, sand_particle_count)
-    y_sand = np.random.uniform(-0.5, 0.5, sand_particle_count)
-    z_sand = np.random.uniform(-0.5, 0.5, sand_particle_count)
+    # Use full bounds like in sand_dust_viz.py - updated for 160×160×40mm
+    x_sand = np.random.uniform(-1.95, 1.95,
+                               sand_particle_count)  # 160mm length
+    # 160mm width (updated for square dimensions)
+    y_sand = np.random.uniform(-1.95, 1.95, sand_particle_count)
+    z_sand = np.random.uniform(-0.45, 0.45, sand_particle_count)  # 40mm height
 
     # Create particle characteristics based on intrusion data (like sand_dust_viz.py)
     norm_intrusion = intr / np.max(intr)
@@ -48,8 +72,9 @@ def create_combined_pores_sand_visualization(diam, intr, sample_name, output_fil
 
     for j in range(sand_particle_count):
         # Map particle position to intrusion characteristics
-        dist_x_norm = abs(x_sand[j]) / 2.0
-        dist_y_norm = abs(y_sand[j]) / 0.5
+        dist_x_norm = abs(x_sand[j]) / 1.95  # Updated for 160mm length
+        # Updated for 160mm width (changed from 0.5 to 1.95)
+        dist_y_norm = abs(y_sand[j]) / 1.95
         dist_from_center = np.sqrt((dist_x_norm**2 + dist_y_norm**2) / 2)
 
         # Map to intrusion data
@@ -132,19 +157,9 @@ def create_combined_pores_sand_visualization(diam, intr, sample_name, output_fil
         ax.plot_surface(x, y, z, color=color, shade=True, alpha=0.95,
                         rstride=1, cstride=1, linewidth=0)
 
-    # Set title
-    ax.set_title(f"{sample_name}: Pores + Sand/Dust Fill",
-                 fontsize=12, color='#333333', weight='bold')
-
     # Add sample information
     ax.text2D(0.05, 0.95, sample_name, transform=ax.transAxes, fontsize=12,
               fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
-
-    # Add information text
-    info_text = (f"Combined visualization: Realistic pores within sand/dust-filled {sample_name} board.\n"
-                 f"Shows both major pore structures and fine granular material matrix.")
-    plt.figtext(0.5, 0.02, info_text, ha='center', fontsize=9,
-                bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.5'))
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
@@ -152,7 +167,7 @@ def create_combined_pores_sand_visualization(diam, intr, sample_name, output_fil
     plt.close()
 
 
-def create_combined_three_samples_pores_sand_visualization(diam1, intr1, diam2, intr2, diam3, intr3, output_file):
+def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2, intr2, diam3, intr3, output_file):
     """Create combined visualization with all three samples showing pores + sand"""
     fig = plt.figure(figsize=(18, 7))
 
@@ -188,12 +203,15 @@ def create_combined_three_samples_pores_sand_visualization(diam1, intr1, diam2, 
 
         # Add sand/dust background with high visibility
         total_porosity = np.sum(intrusion)
-        base_particles = 4000  # Fewer for combined view but still visible
+        base_particles = 5000  # Increased for better coverage of the larger volume
         sand_particle_count = int(base_particles * (1 + total_porosity / 15))
 
-        x_sand = np.random.uniform(-2.0, 2.0, sand_particle_count)
-        y_sand = np.random.uniform(-0.5, 0.5, sand_particle_count)
-        z_sand = np.random.uniform(-0.5, 0.5, sand_particle_count)
+        x_sand = np.random.uniform(-1.95, 1.95,
+                                   sand_particle_count)  # 160mm length
+        # 160mm width (updated for square dimensions)
+        y_sand = np.random.uniform(-1.95, 1.95, sand_particle_count)
+        z_sand = np.random.uniform(-0.45, 0.45,
+                                   sand_particle_count)  # 40mm height
 
         # Create particle characteristics like sand_dust_viz.py
         norm_intrusion = intrusion / np.max(intrusion)
@@ -204,8 +222,9 @@ def create_combined_three_samples_pores_sand_visualization(diam1, intr1, diam2, 
 
         for j in range(sand_particle_count):
             # Map particle position to intrusion characteristics
-            dist_x_norm = abs(x_sand[j]) / 2.0
-            dist_y_norm = abs(y_sand[j]) / 0.5
+            dist_x_norm = abs(x_sand[j]) / 1.95  # Updated for 160mm length
+            # Updated for 160mm width (changed from 0.5 to 1.95)
+            dist_y_norm = abs(y_sand[j]) / 1.95
             dist_from_center = np.sqrt((dist_x_norm**2 + dist_y_norm**2) / 2)
 
             # Map to intrusion data
@@ -267,22 +286,11 @@ def create_combined_three_samples_pores_sand_visualization(diam1, intr1, diam2, 
             ax.plot_surface(x, y, z, color=color, shade=True, alpha=0.9,
                             rstride=1, cstride=1, linewidth=0)
 
-        # Set title
-        ax.set_title(
-            f"{name}: {descriptions[i]}", fontsize=10, color='#333333', weight='bold')
-
-    # Add overall title
-    plt.suptitle('Combined Pores + Sand/Dust Visualization',
-                 fontsize=16, fontweight='bold', color='#333333', y=0.95)
-
-    # Add information text
-    info_text = ("Combined visualization showing realistic pores within sand/dust-filled thermal boards.\n"
-                 "Demonstrates both macro-pore structures and fine granular material composition.")
-    plt.figtext(0.5, 0.02, info_text, ha='center', fontsize=10,
-                bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.5'))
+        # Add sample label
+        ax.text2D(0.05, 0.95, name, transform=ax.transAxes, fontsize=12,
+                  fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.88, bottom=0.12)
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(
         f"Combined three-sample pores + sand visualization saved to {output_file}")

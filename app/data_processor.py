@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Data loading and processing module for pore visualization.
+Mercury intrusion porosimetry (MIP) data processing module for 
+CSA cement-based thermal insulating board characterization.
+
+This module handles experimental data loading, cleaning, and preparation
+for 3D pore structure modeling and computational analysis.
 """
 
 import pandas as pd
@@ -9,14 +13,31 @@ from io import StringIO
 
 
 def load_and_clean_data(filename):
-    """Load and clean the CSV data, removing invalid rows"""
-    print("Loading and cleaning data...")
+    """
+    Load and process experimental mercury intrusion porosimetry data.
 
-    # Read every line of the file
+    Reads CSV data containing pore diameter, intrusion volume, and conductivity
+    measurements for thermal insulating board samples. Performs data validation
+    and cleaning to ensure numerical consistency for computational modeling.
+
+    Parameters:
+    -----------
+    filename : str
+        Path to CSV file containing experimental MIP data
+
+    Returns:
+    --------
+    pandas.DataFrame
+        Cleaned experimental data with validated numerical values
+        for pore diameter, intrusion volume, and thermal conductivity
+    """
+    print("Loading and cleaning experimental MIP data...")
+
+    # Read experimental data file line by line
     with open(filename, 'r') as f:
         all_lines = f.readlines()
 
-    # Keep only those lines whose first field can be parsed as a float
+    # Filter data rows to ensure valid numerical entries for analysis
     clean_lines = []
     for line in all_lines:
         stripped = line.strip()

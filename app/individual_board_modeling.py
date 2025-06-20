@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Individual sample visualization module.
+Individual thermal insulating board pore structure modeling module.
+
+Generates detailed 3D computational models of pore architecture for individual
+CSA cement-based board compositions, based on experimental mercury intrusion
+porosimetry characterization data.
 """
 
 import numpy as np
@@ -11,13 +15,32 @@ from .utils import plot_orange_prism_frame, setup_clean_axes, generate_realistic
 
 
 def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name,
-                                    sample_color='jet', title=""):
-    """Create a clean pore visualization with orange prism and realistic pores"""
+                                    sample_color='jet'):
+    """
+    Create a detailed 3D pore structure model for individual board composition.
 
-    # Setup clean axes
+    Generates computational visualization of pore architecture within the geometric
+    framework of the insulating board, using experimental MIP data to determine
+    pore size distribution and spatial arrangement.
+
+    Parameters:
+    -----------
+    ax : matplotlib 3D axis
+        The 3D plotting axis for rendering the pore structure
+    diameters : array_like
+        Experimental pore diameter data from MIP testing
+    intrusion_values : array_like
+        Mercury intrusion volume data for pore characterization
+    sample_name : str
+        Board composition identifier (T1, T2, or T3)
+    sample_color : str, default='jet'
+        Colormap for pore size visualization
+    """
+
+    # Configure axes for scientific visualization
     setup_clean_axes(ax)
 
-    # Draw the orange prism frame
+    # Render the geometric framework representing board boundaries
     plot_orange_prism_frame(ax)
 
     # Generate realistic pores
@@ -61,10 +84,6 @@ def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name
         ax.plot_surface(x, y, z, color=color, shade=True, alpha=0.9,
                         rstride=1, cstride=1, linewidth=0)
 
-    # Set title if provided
-    if title:
-        ax.set_title(title, fontsize=12, color='#333333', weight='bold')
-
     # Add sample information in clean format
     ax.text2D(0.05, 0.95, sample_name, transform=ax.transAxes, fontsize=12,
               fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
@@ -72,21 +91,35 @@ def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name
 
 def create_individual_sample_visualization(diam, intr, sample_name, output_file,
                                            sample_color='jet'):
-    """Create individual visualization for a single sample"""
+    """
+    Create computational model for individual insulating board composition.
+
+    Generates a detailed 3D visualization of pore structure based on experimental
+    mercury intrusion porosimetry data for a single board composition.
+
+    Parameters:
+    -----------
+    diam : array_like
+        Experimental pore diameter measurements
+    intr : array_like  
+        Mercury intrusion volume data
+    sample_name : str
+        Board identifier (T1, T2, or T3)
+    output_file : str
+        Path for saving the generated model
+    sample_color : str, default='jet'
+        Colormap for visualization
+    """
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
 
     # Create the clean visualization
-    create_clean_pore_visualization(ax, diam, intr, sample_name,
-                                    sample_color, f"{sample_name} Pore Distribution")
+    create_clean_pore_visualization(ax, diam, intr, sample_name, sample_color)
 
-    # Add information text
-    info_text = (f"3D visualization of pore distribution in {sample_name} thermal insulating board.\n"
-                 f"Realistic pore representation within clean orange prism frame.")
-    plt.figtext(0.5, 0.02, info_text, ha='center', fontsize=9,
-                bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.5'))
+    # Configure viewing angle for optimal visualization
+    ax.view_init(elev=30, azim=60)
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"Individual visualization saved to {output_file}")
+    print(f"Individual board model saved to {output_file}")
     plt.close()

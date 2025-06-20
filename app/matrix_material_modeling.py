@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Sand/dust-filled visualization module.
+Matrix-filled pore space modeling module for CSA cement-based insulating boards.
+
+Generates computational models representing dense granular material matrix
+filling the board volume, simulating the packing of cement particles, 
+expanded vermiculite, rice husk ash, and bamboo fiber components.
 """
 
 import numpy as np
@@ -9,11 +13,26 @@ from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes
 
 
-def create_sand_dust_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3, output_file):
-    """Create visualization with sand/dust-like particle fill inside orange prism frames"""
+def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3, output_file):
+    """
+    Create computational models with dense matrix material filling the board volume.
+
+    Generates 3D visualization representing the granular material matrix composed
+    of cement, vermiculite, and agricultural waste components, providing context
+    for understanding the material structure surrounding the pore spaces.
+
+    Parameters:
+    -----------
+    diam1, diam2, diam3 : array_like
+        Pore diameter data for boards T1, T2, T3 (influences particle distribution)
+    intr1, intr2, intr3 : array_like  
+        Intrusion data for boards T1, T2, T3 (influences particle density)
+    output_file : str
+        Path for saving the generated visualization
+    """
     fig = plt.figure(figsize=(20, 8))
 
-    # Create subplots
+    # Create comparative visualization layout for three board compositions
     ax1 = fig.add_subplot(131, projection='3d')
     ax2 = fig.add_subplot(132, projection='3d')
     ax3 = fig.add_subplot(133, projection='3d')
@@ -42,17 +61,21 @@ def create_sand_dust_filled_visualization(diam1, intr1, diam2, intr2, diam3, int
 
         # Create sand/dust particles with varying sizes and density
         # More particles for samples with different characteristics
-        base_particles = 12000  # Increased base number of particles for complete fill
+        base_particles = 15000  # Increased for better coverage of the larger 160×160×40mm volume
         particle_count = int(base_particles * (1 + total_porosity /
                              np.max([np.sum(intr1), np.sum(intr2), np.sum(intr3)])))
 
         print(f"Creating {particle_count} sand/dust particles for {name}...")
 
         # Generate particle positions throughout the entire volume - fill completely
-        # Use the exact bounds of the orange prism: X: [-2.0, 2.0], Y: [-0.5, 0.5], Z: [-0.5, 0.5]
-        x_positions = np.random.uniform(-2.0, 2.0, particle_count)
-        y_positions = np.random.uniform(-0.5, 0.5, particle_count)
-        z_positions = np.random.uniform(-0.5, 0.5, particle_count)
+        # Use the exact bounds of the orange prism: X: [-2.0, 2.0], Y: [-2.0, 2.0], Z: [-0.5, 0.5]
+        # Fill the entire 160×160×40mm space uniformly
+        # Slightly inside the frame
+        x_positions = np.random.uniform(-1.95, 1.95, particle_count)
+        # Full Y range for 160mm width
+        y_positions = np.random.uniform(-1.95, 1.95, particle_count)
+        # Full Z range for 40mm height
+        z_positions = np.random.uniform(-0.45, 0.45, particle_count)
 
         # Create particle sizes - very small like sand/dust
         # Vary sizes based on intrusion characteristics
@@ -65,8 +88,10 @@ def create_sand_dust_filled_visualization(diam1, intr1, diam2, intr2, diam3, int
         for j in tqdm(range(particle_count), desc=f"Generating {name} particles"):
             # Map particle position to intrusion characteristics
             # Use distance from center to determine particle properties
-            dist_x_norm = abs(x_positions[j]) / 2.0  # Updated for full bounds
-            dist_y_norm = abs(y_positions[j]) / 0.5  # Updated for full bounds
+            # Updated for 160mm length (normalized to [-1.95, 1.95])
+            dist_x_norm = abs(x_positions[j]) / 1.95
+            # Updated for 160mm width (normalized to [-1.95, 1.95])
+            dist_y_norm = abs(y_positions[j]) / 1.95
             dist_from_center = np.sqrt((dist_x_norm**2 + dist_y_norm**2) / 2)
 
             # Map to intrusion data
@@ -113,22 +138,11 @@ def create_sand_dust_filled_visualization(diam1, intr1, diam2, intr2, diam3, int
                        alpha=0.7,
                        edgecolors='none')
 
-        # Set title
-        ax.set_title(f"{name}: Sand/Dust-Filled Board", fontsize=11,
-                     color='#333333', weight='bold')
-
-    # Add overall title and info
-    plt.suptitle('Sand/Dust-Filled Thermal Board Visualization',
-                 fontsize=16, fontweight='bold', color='#333333', y=0.95)
-
-    # Add information text
-    info_text = ("Dense sand/dust-like particle fill representing material composition.\n"
-                 "Particle density and size variation based on pore distribution characteristics.")
-    plt.figtext(0.5, 0.02, info_text, ha='center', fontsize=10,
-                bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.5'))
+        # Add sample label
+        ax.text2D(0.05, 0.95, name, transform=ax.transAxes, fontsize=12,
+                  fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.88, bottom=0.12)
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print(f"Sand/dust-filled visualization saved to {output_file}")
     plt.close()
