@@ -6,6 +6,11 @@ Main computational modeling script for experimental thermal insulating board cha
 Generates advanced 3D visualizations and analysis of pore structures based on 
 mercury intrusion porosimetry data from calcium sulfoaluminate cement boards 
 with agricultural waste components.
+
+Configuration System:
+- Switch between 'default' (160×160×40mm boards) and 'small_specimen' (10mm diameter)
+- All parameters centralized in app.config module
+- Easy parameter modification without touching core analysis code
 """
 
 import os
@@ -18,6 +23,8 @@ from app.hybrid_pore_matrix_modeling import (
     create_combined_pores_matrix_visualization,
     create_combined_three_samples_pores_matrix_visualization
 )
+from app.config import set_configuration, get_config
+from app.config import set_configuration, get_config, get_board_dimensions
 
 
 def main():
@@ -28,11 +35,37 @@ def main():
     - Individual board composition analysis (T1, T2, T3)
     - Comparative pore structure analysis  
     - Density-based pore distribution modeling
-    - Matrix-filled space visualization
-    - Hybrid pore-matrix computational models
+    - Matrix material visualization
+    - Hybrid pore-matrix modeling
+
+    Configuration can be changed by modifying the CONFIG_TYPE variable below.
     """
-    print("=== 3D Pore Structure Modeling for CSA Cement-Based Insulating Boards ===")
-    print("Advanced computational analysis with experimental MIP data integration")
+
+    # === CONFIGURATION SELECTION ===
+    # Change this to switch between configurations:
+    # - "default": Standard 160×160×40mm boards
+    # - "small_specimen": Small 10±1mm diameter specimens
+    CONFIG_TYPE = "default"  # <-- CHANGE THIS FOR DIFFERENT TEST SCENARIOS
+
+    # Apply the selected configuration
+    set_configuration(CONFIG_TYPE)
+    config = get_config()
+
+    # Display current configuration
+    print(f"\n{'='*60}")
+    print(
+        f"3D PORE STRUCTURE MODELING - Configuration: {config.config_name.upper()}")
+    print(f"{'='*60}")
+
+    board_dims = get_board_dimensions()
+    print(
+        f"Board dimensions: {board_dims[0]:.1f} × {board_dims[1]:.1f} × {board_dims[2]:.1f} mm")
+    print(
+        f"Pore counts: Individual={config.n_pores_individual}, Comparative={config.n_pores_comparative}")
+    print(
+        f"Visualization resolution: {config.sphere_u_resolution}×{config.sphere_v_resolution}")
+    print(f"Output format: {config.output_format} at {config.dpi} DPI")
+    print(f"{'='*60}\n")
 
     # Experimental mercury intrusion porosimetry data location
     filename = "dataset/pore_data.csv"
@@ -85,7 +118,7 @@ def main():
 
     create_combined_three_samples_visualization(
         diam1, intr1, diam2, intr2, diam3, intr3,
-        os.path.join(output_dir, "combined_three_samples_clean.png"))
+        os.path.join(output_dir, "comparative_analysis.png"))
 
     # 3. Create density distribution models
     print("\n" + "="*60)

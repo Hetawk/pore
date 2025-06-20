@@ -3,6 +3,7 @@ dataset/
 
 # Output directory (generated files)
 out/
+test_config.py
 
 # Python
 __pycache__/

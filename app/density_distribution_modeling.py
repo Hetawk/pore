@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes
+from .config import get_config
 
 
 def create_density_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3, output_file):

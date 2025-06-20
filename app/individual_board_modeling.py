@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes, generate_realistic_pores
+from .config import get_config
 
 
 def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name,
@@ -36,6 +37,7 @@ def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name
     sample_color : str, default='jet'
         Colormap for pore size visualization
     """
+    config = get_config()
 
     # Configure axes for scientific visualization
     setup_clean_axes(ax)
@@ -43,12 +45,12 @@ def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name
     # Render the geometric framework representing board boundaries
     plot_orange_prism_frame(ax)
 
-    # Generate realistic pores
+    # Generate realistic pores using config parameters
     pore_positions, scaled_radii, selected_diameters = generate_realistic_pores(
-        diameters, intrusion_values, sample_name, n_pores=600)
+        diameters, intrusion_values, sample_name, n_pores=config.n_pores_individual)
 
-    # Set up camera position for depth sorting (adjusted for rectangular shape)
-    camera_pos = np.array([3.0, 1.0, 1.0])
+    # Set up camera position for depth sorting from config
+    camera_pos = config.camera_position
 
     # Define colormap and norm for pore coloring
     colormap = plt.get_cmap(sample_color)
@@ -58,8 +60,9 @@ def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name
     # Sort pores by distance from camera for proper rendering
     distances = np.linalg.norm(
         pore_positions - camera_pos.reshape(1, 3), axis=1)
-    # Add z-height bonus to keep high pores visible
-    z_bonus = pore_positions[:, 2] / 0.4 * 0.2 * np.max(distances)
+    # Add z-height bonus to keep high pores visible using config parameter
+    z_bonus = pore_positions[:, 2] / config.thickness_scale * \
+        config.z_depth_bonus * np.max(distances)
     adjusted_distances = distances - z_bonus
 
     # Sort indices based on adjusted distances (back to front)
@@ -67,22 +70,23 @@ def create_clean_pore_visualization(ax, diameters, intrusion_values, sample_name
     pore_positions = pore_positions[sort_indices]
     scaled_radii = scaled_radii[sort_indices]
 
-    # Render pores as spheres
+    # Render pores as spheres using config parameters
     print(f"Rendering {len(pore_positions)} pores for {sample_name}...")
     for i in tqdm(range(len(pore_positions)), desc="Rendering pores"):
         radius = scaled_radii[i]
         color = colormap(norm(radius))
 
-        # Create a sphere for each pore
-        u = np.linspace(0, 2 * np.pi, 12)  # Lower resolution for performance
-        v = np.linspace(0, np.pi, 8)
+        # Create a sphere for each pore using config resolution settings
+        u = np.linspace(0, 2 * np.pi, config.sphere_u_resolution)
+        v = np.linspace(0, np.pi, config.sphere_v_resolution)
         x = pore_positions[i, 0] + radius * np.outer(np.cos(u), np.sin(v))
         y = pore_positions[i, 1] + radius * np.outer(np.sin(u), np.sin(v))
         z = pore_positions[i, 2] + radius * \
             np.outer(np.ones(np.size(u)), np.cos(v))
 
-        ax.plot_surface(x, y, z, color=color, shade=True, alpha=0.9,
-                        rstride=1, cstride=1, linewidth=0)
+        # Render the sphere with config transparency
+        ax.plot_surface(x, y, z, color=color, alpha=config.alpha_transparency,
+                        edgecolor='none', shade=True)
 
     # Add sample information in clean format
     ax.text2D(0.05, 0.95, sample_name, transform=ax.transAxes, fontsize=12,
@@ -110,16 +114,17 @@ def create_individual_sample_visualization(diam, intr, sample_name, output_file,
     sample_color : str, default='jet'
         Colormap for visualization
     """
-    fig = plt.figure(figsize=(10, 8))
+    config = get_config()
+
+    # Create figure with config parameters
+    fig = plt.figure(figsize=config.figure_size)
     ax = fig.add_subplot(111, projection='3d')
 
     # Create the clean visualization
     create_clean_pore_visualization(ax, diam, intr, sample_name, sample_color)
 
-    # Configure viewing angle for optimal visualization
-    ax.view_init(elev=30, azim=60)
-
-    plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    # Save with config parameters
+    plt.savefig(output_file, dpi=config.dpi, bbox_inches='tight',
+                format=config.output_format)
     print(f"Individual board model saved to {output_file}")
-    plt.close()
+    plt.close(fig)
