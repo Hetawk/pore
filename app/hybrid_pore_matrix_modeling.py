@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes, generate_realistic_pores
+from . import config
 
 
 def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_file, sample_color='jet'):
@@ -49,17 +50,31 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
     # 1. First, add sand/dust fill with high visibility
     print(f"Adding sand/dust background for {sample_name}...")
 
-    # Generate more sand particles for better visibility (similar to sand_dust_viz.py)
+    # Get matrix parameters from configuration (same as matrix_material_modeling.py)
+    current_config = config.get_config()
+    matrix_params = current_config.get_matrix_parameters()
+    dimension_scales = current_config.get_dimension_scale_factors()
+    particle_counts = current_config.get_particle_counts()
+    # Still needed for pore coloring
+    size_params = current_config.get_particle_size_parameters()
+
+    # Use matrix parameters from configuration
+    x_min, x_max = matrix_params['x_bounds']
+    y_min, y_max = matrix_params['y_bounds']
+    z_min, z_max = matrix_params['z_bounds']
+    length_norm = matrix_params['length_norm']
+    width_norm = matrix_params['width_norm']
+
+    # Generate more sand particles for better visibility - scale with volume
     total_porosity = np.sum(intr)
-    base_particles = 8000  # Increased for better coverage of the larger 160×160×40mm volume
+    base_particles = int(
+        particle_counts['hybrid_main'] * dimension_scales['volume_scale'])
     sand_particle_count = int(base_particles * (1 + total_porosity / 10))
 
-    # Use full bounds like in sand_dust_viz.py - updated for 160×160×40mm
-    x_sand = np.random.uniform(-1.95, 1.95,
-                               sand_particle_count)  # 160mm length
-    # 160mm width (updated for square dimensions)
-    y_sand = np.random.uniform(-1.95, 1.95, sand_particle_count)
-    z_sand = np.random.uniform(-0.45, 0.45, sand_particle_count)  # 40mm height
+    # Use bounds from matrix configuration
+    x_sand = np.random.uniform(x_min, x_max, sand_particle_count)
+    y_sand = np.random.uniform(y_min, y_max, sand_particle_count)
+    z_sand = np.random.uniform(z_min, z_max, sand_particle_count)
 
     # Create particle characteristics based on intrusion data (like sand_dust_viz.py)
     norm_intrusion = intr / np.max(intr)
@@ -72,22 +87,24 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
 
     for j in range(sand_particle_count):
         # Map particle position to intrusion characteristics
-        dist_x_norm = abs(x_sand[j]) / 1.95  # Updated for 160mm length
-        # Updated for 160mm width (changed from 0.5 to 1.95)
-        dist_y_norm = abs(y_sand[j]) / 1.95
+        dist_x_norm = abs(x_sand[j]) / length_norm
+        dist_y_norm = abs(y_sand[j]) / width_norm
         dist_from_center = np.sqrt((dist_x_norm**2 + dist_y_norm**2) / 2)
 
         # Map to intrusion data
         data_idx = min(int(dist_from_center * len(intr)), len(intr)-1)
 
-        # Particle size based on pore characteristics (same as sand_dust_viz.py)
-        base_size = 0.8 + 1.5 * norm_intrusion[data_idx]
+        # Particle size based on pore characteristics (using matrix parameters)
+        base_size = matrix_params['base_particle_size'] + \
+            matrix_params['particle_size_variation'] * norm_intrusion[data_idx]
         size_variation = np.random.uniform(0.7, 1.3)
         final_size = base_size * size_variation
         sand_sizes.append(final_size)
 
-        # Color intensity (same as sand_dust_viz.py)
-        color_intensity = 0.3 + 0.7 * norm_intrusion[data_idx]
+        # Color intensity (using matrix parameters)
+        color_intensity = matrix_params['color_intensity_base'] + \
+            matrix_params['color_intensity_variation'] * \
+            norm_intrusion[data_idx]
         sand_colors.append(colormap(color_intensity))
 
     # Sort sand particles by depth for proper rendering
@@ -101,8 +118,8 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
     sizes_sand_sorted = np.array(sand_sizes)[sand_sort_indices]
     colors_sand_sorted = np.array(sand_colors)[sand_sort_indices]
 
-    # Render sand particles with high visibility (same alpha as sand_dust_viz.py)
-    batch_size = 1000
+    # Render sand particles with high visibility (using matrix parameters)
+    batch_size = matrix_params['batch_size']
     for batch_start in range(0, len(x_sand_sorted), batch_size):
         batch_end = min(batch_start + batch_size, len(x_sand_sorted))
 
@@ -111,7 +128,7 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
                    z_sand_sorted[batch_start:batch_end],
                    s=sizes_sand_sorted[batch_start:batch_end],
                    c=colors_sand_sorted[batch_start:batch_end],
-                   alpha=0.7,  # Same high alpha as sand_dust_viz.py
+                   alpha=matrix_params['particle_alpha'],
                    edgecolors='none')
 
     # 2. Then, add realistic pores on top
@@ -144,7 +161,8 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
     for i in tqdm(range(len(pore_positions)), desc="Rendering pores"):
         radius = scaled_radii[i]
         # Higher intensity for visibility
-        color = colormap(0.8 + 0.2 * norm(radius))
+        color = colormap(size_params['pore_color_intensity_base'] +
+                         size_params['pore_color_intensity_variation'] * norm(radius))
 
         # Create a sphere for each pore
         u = np.linspace(0, 2 * np.pi, 10)  # Lower resolution for performance
@@ -162,7 +180,7 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
               fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
     print(f"Combined pores + sand visualization saved to {output_file}")
     plt.close()
 
@@ -201,17 +219,28 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
         # Draw orange prism frame
         plot_orange_prism_frame(ax)
 
-        # Add sand/dust background with high visibility
+        # Get matrix parameters from configuration (same approach as other functions)
+        current_config = config.get_config()
+        matrix_params = current_config.get_matrix_parameters()
+        dimension_scales = current_config.get_dimension_scale_factors()
+        particle_counts = current_config.get_particle_counts()
+        size_params = current_config.get_particle_size_parameters()
+
+        # Use matrix parameters from configuration
+        x_min, x_max = matrix_params['x_bounds']
+        y_min, y_max = matrix_params['y_bounds']
+        z_min, z_max = matrix_params['z_bounds']
+        length_norm = matrix_params['length_norm']
+        width_norm = matrix_params['width_norm']
+
         total_porosity = np.sum(intrusion)
-        base_particles = 5000  # Increased for better coverage of the larger volume
+        base_particles = int(
+            particle_counts['hybrid_combined'] * dimension_scales['volume_scale'])
         sand_particle_count = int(base_particles * (1 + total_porosity / 15))
 
-        x_sand = np.random.uniform(-1.95, 1.95,
-                                   sand_particle_count)  # 160mm length
-        # 160mm width (updated for square dimensions)
-        y_sand = np.random.uniform(-1.95, 1.95, sand_particle_count)
-        z_sand = np.random.uniform(-0.45, 0.45,
-                                   sand_particle_count)  # 40mm height
+        x_sand = np.random.uniform(x_min, x_max, sand_particle_count)
+        y_sand = np.random.uniform(y_min, y_max, sand_particle_count)
+        z_sand = np.random.uniform(z_min, z_max, sand_particle_count)
 
         # Create particle characteristics like sand_dust_viz.py
         norm_intrusion = intrusion / np.max(intrusion)
@@ -222,9 +251,8 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
 
         for j in range(sand_particle_count):
             # Map particle position to intrusion characteristics
-            dist_x_norm = abs(x_sand[j]) / 1.95  # Updated for 160mm length
-            # Updated for 160mm width (changed from 0.5 to 1.95)
-            dist_y_norm = abs(y_sand[j]) / 1.95
+            dist_x_norm = abs(x_sand[j]) / length_norm
+            dist_y_norm = abs(y_sand[j]) / width_norm
             dist_from_center = np.sqrt((dist_x_norm**2 + dist_y_norm**2) / 2)
 
             # Map to intrusion data
@@ -239,7 +267,9 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
             sand_sizes.append(final_size)
 
             # Higher color intensity for visibility
-            color_intensity = 0.25 + 0.6 * norm_intrusion[data_idx]
+            color_intensity = size_params['color_intensity_base'] + \
+                size_params['color_intensity_variation'] * \
+                norm_intrusion[data_idx]
             sand_colors.append(colormap(color_intensity))
 
         # Sort and render with high visibility
@@ -252,10 +282,10 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
         sizes_sand_sorted = np.array(sand_sizes)[sand_sort_indices]
         colors_sand_sorted = np.array(sand_colors)[sand_sort_indices]
 
-        # Render with higher alpha for visibility
+        # Render with matrix parameters
         ax.scatter(x_sand_sorted, y_sand_sorted, z_sand_sorted,
                    s=sizes_sand_sorted, c=colors_sand_sorted,
-                   alpha=0.6, edgecolors='none')  # Increased from 0.3 to 0.6
+                   alpha=matrix_params['particle_alpha'], edgecolors='none')
 
         # Add realistic pores
         pore_positions, scaled_radii, _ = generate_realistic_pores(
@@ -291,7 +321,7 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
                   fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
     print(
         f"Combined three-sample pores + sand visualization saved to {output_file}")
     plt.close()

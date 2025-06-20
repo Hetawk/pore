@@ -149,6 +149,7 @@ def create_density_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3
                   fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    config_instance = get_config()
+    plt.savefig(output_file, dpi=config_instance.dpi, bbox_inches='tight')
     print(f"Density-filled visualization saved to {output_file}")
     plt.close()

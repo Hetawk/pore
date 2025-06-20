@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes
+from . import config
 
 
 def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3, output_file):
@@ -59,23 +60,28 @@ def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3,
         total_porosity = np.sum(intrusion)
         mean_pore_size = np.mean(diameters)
 
+        # Get matrix parameters from configuration
+        current_config = config.get_config()
+        matrix_params = current_config.get_matrix_parameters()
+        dimension_scales = current_config.get_dimension_scale_factors()
+
         # Create sand/dust particles with varying sizes and density
         # More particles for samples with different characteristics
-        base_particles = 15000  # Increased for better coverage of the larger 160×160×40mm volume
-        particle_count = int(base_particles * (1 + total_porosity /
+        base_particles = matrix_params['base_particles']
+        particle_count = int(base_particles * dimension_scales['volume_scale'] * (1 + total_porosity /
                              np.max([np.sum(intr1), np.sum(intr2), np.sum(intr3)])))
 
         print(f"Creating {particle_count} sand/dust particles for {name}...")
 
         # Generate particle positions throughout the entire volume - fill completely
-        # Use the exact bounds of the orange prism: X: [-2.0, 2.0], Y: [-2.0, 2.0], Z: [-0.5, 0.5]
-        # Fill the entire 160×160×40mm space uniformly
-        # Slightly inside the frame
-        x_positions = np.random.uniform(-1.95, 1.95, particle_count)
-        # Full Y range for 160mm width
-        y_positions = np.random.uniform(-1.95, 1.95, particle_count)
-        # Full Z range for 40mm height
-        z_positions = np.random.uniform(-0.45, 0.45, particle_count)
+        # Use bounds from configuration
+        x_min, x_max = matrix_params['x_bounds']
+        y_min, y_max = matrix_params['y_bounds']
+        z_min, z_max = matrix_params['z_bounds']
+
+        x_positions = np.random.uniform(x_min, x_max, particle_count)
+        y_positions = np.random.uniform(y_min, y_max, particle_count)
+        z_positions = np.random.uniform(z_min, z_max, particle_count)
 
         # Create particle sizes - very small like sand/dust
         # Vary sizes based on intrusion characteristics
@@ -88,10 +94,8 @@ def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3,
         for j in tqdm(range(particle_count), desc=f"Generating {name} particles"):
             # Map particle position to intrusion characteristics
             # Use distance from center to determine particle properties
-            # Updated for 160mm length (normalized to [-1.95, 1.95])
-            dist_x_norm = abs(x_positions[j]) / 1.95
-            # Updated for 160mm width (normalized to [-1.95, 1.95])
-            dist_y_norm = abs(y_positions[j]) / 1.95
+            dist_x_norm = abs(x_positions[j]) / matrix_params['length_norm']
+            dist_y_norm = abs(y_positions[j]) / matrix_params['width_norm']
             dist_from_center = np.sqrt((dist_x_norm**2 + dist_y_norm**2) / 2)
 
             # Map to intrusion data
@@ -99,15 +103,19 @@ def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3,
                 int(dist_from_center * len(intrusion)), len(intrusion)-1)
 
             # Particle size based on local pore characteristics
-            # Very small particles
-            base_size = 0.8 + 1.5 * norm_intrusion[data_idx]
+            # Use configurable sizing parameters
+            base_size = matrix_params['base_particle_size'] + \
+                matrix_params['particle_size_variation'] * \
+                norm_intrusion[data_idx]
             size_variation = np.random.uniform(0.7, 1.3)  # Random variation
             final_size = base_size * size_variation
 
             particle_sizes.append(final_size)
 
-            # Color based on density and position
-            color_intensity = 0.3 + 0.7 * norm_intrusion[data_idx]
+            # Color based on density and position - use config parameters
+            color_intensity = matrix_params['color_intensity_base'] + \
+                matrix_params['color_intensity_variation'] * \
+                norm_intrusion[data_idx]
             particle_colors.append(cmap(color_intensity))
 
         # Render particles efficiently using scatter plot
@@ -126,7 +134,7 @@ def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3,
         colors_sorted = np.array(particle_colors)[sort_indices]
 
         # Render particles in batches for better performance
-        batch_size = 1000
+        batch_size = matrix_params['batch_size']
         for batch_start in tqdm(range(0, len(x_sorted), batch_size), desc=f"Rendering {name} batches"):
             batch_end = min(batch_start + batch_size, len(x_sorted))
 
@@ -135,7 +143,7 @@ def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3,
                        z_sorted[batch_start:batch_end],
                        s=sizes_sorted[batch_start:batch_end],
                        c=colors_sorted[batch_start:batch_end],
-                       alpha=0.7,
+                       alpha=matrix_params['particle_alpha'],
                        edgecolors='none')
 
         # Add sample label
@@ -143,6 +151,6 @@ def create_matrix_filled_visualization(diam1, intr1, diam2, intr2, diam3, intr3,
                   fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
     plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
     print(f"Sand/dust-filled visualization saved to {output_file}")
     plt.close()

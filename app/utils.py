@@ -157,17 +157,25 @@ def generate_realistic_pores(diameters, intrusion_values, sample_name, n_pores=N
     scaled_radii *= config.pore_scale_factor
 
     # Generate pore positions within the board bounds from config
-    x_bound = config.length_scale * 0.95   # 5% margin from edges
-    y_bound = config.width_scale * 0.95    # 5% margin from edges
-    z_bound = config.thickness_scale * 0.8  # 20% margin from top/bottom
+    positioning_params = config.get_positioning_parameters()
+    # Configurable margin from edges
+    x_bound = config.length_scale * positioning_params['edge_margin_factor']
+    # Configurable margin from edges
+    y_bound = config.width_scale * positioning_params['edge_margin_factor']
+    # Configurable margin from top/bottom
+    z_bound = config.thickness_scale * positioning_params['z_margin_factor']
 
     pore_positions = []
 
     # Helper function to add a pore with small jitter
-    def add_pore_at(x, y, z, jitter=0.05):
+    def add_pore_at(x, y, z, jitter=None):
+        if jitter is None:
+            jitter = positioning_params['jitter_strength']
         jx = np.random.normal(0, jitter)
         jy = np.random.normal(0, jitter)
-        jz = np.random.normal(0, jitter * 0.5)  # Less jitter in Z direction
+        # Less jitter in Z direction
+        jz = np.random.normal(
+            0, jitter * positioning_params['z_jitter_factor'])
         # Ensure pore stays within board bounds
         x = max(min(x + jx, x_bound), -x_bound)
         y = max(min(y + jy, y_bound), -y_bound)
@@ -187,42 +195,47 @@ def generate_realistic_pores(diameters, intrusion_values, sample_name, n_pores=N
 
         pore_positions.append([x, y, z_val])
 
-    # 2. Add pores in a diagonal pattern (25%)
-    diag_pores = int(n_pores * 0.25)
+    # 2. Add pores in a diagonal pattern (configurable percentage)
+    diag_pores = int(n_pores * positioning_params['diagonal_pore_ratio'])
     for i in tqdm(range(diag_pores), desc="Diagonal pores"):
         # Parametric position along diagonal (weighted toward top)
         t = np.random.beta(1.5, 1.0)
 
         # Create points along the diagonal
-        x = x_bound * (1 - t * 0.9) * np.random.choice([-1, 1])
-        y = y_bound * (1 - t * 0.9) * np.random.choice([-1, 1])
+        edge_factor = positioning_params['edge_position_factor']
+        x = x_bound * (1 - t * edge_factor) * np.random.choice([-1, 1])
+        y = y_bound * (1 - t * edge_factor) * np.random.choice([-1, 1])
         z = z_bound * (1 - t * 0.5)
 
-        pore_positions.append(add_pore_at(x, y, z, jitter=0.05))
+        pore_positions.append(add_pore_at(x, y, z))
 
     # 3. Add pores along the edges (15%)
     edge_pores = int(n_pores * 0.15)
     for _ in tqdm(range(edge_pores), desc="Edge pores"):
         edge = np.random.choice(['top-x', 'top-y', 'corner'])
 
+        edge_factor = positioning_params['edge_position_factor']
+        corner_factor = positioning_params['corner_position_factor']
+
         if edge == 'top-x':
             x = np.random.uniform(-x_bound, x_bound)
-            y = y_bound * (0.9 + 0.1 * np.random.random()) * \
+            y = y_bound * (edge_factor + (1-edge_factor) * np.random.random()) * \
                 np.random.choice([-1, 1])
             z = z_bound * (0.8 + 0.2 * np.random.random())
         elif edge == 'top-y':
-            x = x_bound * (0.9 + 0.1 * np.random.random()) * \
+            x = x_bound * (edge_factor + (1-edge_factor) * np.random.random()) * \
                 np.random.choice([-1, 1])
             y = np.random.uniform(-y_bound, y_bound)
             z = z_bound * (0.8 + 0.2 * np.random.random())
         else:  # corner
-            x = x_bound * (0.85 + 0.15 * np.random.random()) * \
+            x = x_bound * (corner_factor + (1-corner_factor) * np.random.random()) * \
                 np.random.choice([-1, 1])
-            y = y_bound * (0.85 + 0.15 * np.random.random()) * \
+            y = y_bound * (corner_factor + (1-corner_factor) * np.random.random()) * \
                 np.random.choice([-1, 1])
-            z = z_bound * (0.85 + 0.15 * np.random.random())
+            z = z_bound * (corner_factor + (1-corner_factor)
+                           * np.random.random())
 
-        pore_positions.append(add_pore_at(x, y, z, jitter=0.03))
+        pore_positions.append(add_pore_at(x, y, z))
 
     # 4. Add remaining pores throughout the volume (20%)
     remaining = n_pores - len(pore_positions)

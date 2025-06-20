@@ -95,36 +95,73 @@ class MaterialConfig:
         # Polar sphere resolution (original: 8)
         self.sphere_v_resolution = 8
         self.alpha_transparency = 0.9     # Sphere transparency (original: 0.9)
+        self.dpi = 300                    # Figure resolution
+        self.output_format = 'png'        # Output file format
+        self.figure_size = (12, 8)        # Figure size in inches
+
+        # Maintain aspect ratio proportional to board dimensions
+        thickness_ratio = self.board_thickness_mm / self.board_length_mm
+        self.aspect_ratio = [1, 1, thickness_ratio]  # e.g., [1, 1, 0.25]
 
         # Camera and depth sorting
         self.camera_position = np.array([3.0, 1.0, 1.0])
-        self.z_depth_bonus = 0.2          # Z-height visibility bonus
-
-        # Frame visualization
-        self.frame_color = '#FF8C00'      # Orange frame color
-        self.frame_linewidth = 1.5        # Frame line thickness
-        self.frame_alpha = 0.8            # Frame transparency
-
-        # Aspect ratio (matches physical dimensions: 160:160:40 = 4:4:1)
-        self.aspect_ratio = [4, 4, 1]
-
-        # Default viewing angle
+        self.sort_particles = True        # Enable depth sorting for realism
         self.view_elevation = 30          # Camera elevation angle
         self.view_azimuth = 60            # Camera azimuth angle
+        self.z_depth_bonus = 0.1          # Bonus for depth sorting
 
-        # === OUTPUT CONFIGURATION ===
-        self.figure_size = (12, 8)        # Matplotlib figure size
-        self.dpi = 300                    # Figure resolution for saving
-        self.output_format = 'png'        # Default output format
+        # Frame visualization
+        self.frame_color = '#FF8C00'      # Orange color for the frame
+        self.frame_linewidth = 1.5        # Line width for the frame
+        self.frame_alpha = 0.8            # Transparency of the frame
 
-        # === PHYSICAL PROPERTIES ===
-        # Mercury intrusion porosimetry parameters
-        self.mercury_contact_angle = 140  # Mercury contact angle (degrees)
-        self.mercury_surface_tension = 0.485  # Surface tension (N/m)
+        # === POSITIONING PARAMETERS ===
+        self.edge_margin_factor = 0.95
+        self.z_margin_factor = 0.8
+        self.diagonal_pore_ratio = 0.25
+        self.jitter_strength = 0.01
+        self.z_jitter_factor = 0.5
+        self.edge_position_factor = 0.9
+        self.corner_position_factor = 0.85
 
-        # Sample composition identifiers
-        self.sample_names = ['T1', 'T2', 'T3']
-        self.sample_colors = ['jet', 'viridis', 'plasma']
+        # === PARTICLE GENERATION PARAMETERS ===
+        self.base_particles_matrix = 15000
+        self.base_particles_hybrid_main = 8000
+        self.base_particles_hybrid_combined = 5000
+
+        # === PARTICLE SIZE PARAMETERS ===
+        self.particle_base_size = 0.8
+        self.particle_size_variation = 1.5
+        self.color_intensity_base = 0.25
+        self.color_intensity_variation = 0.25
+        self.pore_color_intensity_base = 0.3
+        self.pore_color_intensity_variation = 0.4
+
+        # === MATRIX MATERIAL PARAMETERS ===
+        # These parameters control the sand/dust visualization that fills the board
+        # Default boundaries for matrix fill to match board dimensions
+        self.matrix_fill_x_bounds = (-1.95, 1.95)
+        self.matrix_fill_y_bounds = (-1.95, 1.95)
+        self.matrix_fill_z_bounds = (-0.45, 0.45)
+
+        # Normalization constants for particle distribution
+        self.matrix_length_norm = 1.95
+        self.matrix_width_norm = 1.95
+
+        # Particle size parameters for matrix fill
+        self.matrix_base_particle_size = 0.8
+        self.matrix_particle_size_variation = 1.5
+        self.matrix_base_particles = 15000  # Base number of particles
+        self.matrix_particle_alpha = 0.7    # Transparency for matrix particles
+        self.matrix_batch_size = 1000       # Batch size for rendering
+        self.matrix_color_intensity_base = 0.3
+        self.matrix_color_intensity_variation = 0.7
+
+        # === COORDINATE BOUNDS ===
+        # Default coordinate bounds for particle placement
+        self.default_x_bounds = (-1.95, 1.95)
+        self.default_y_bounds = (-1.95, 1.95)
+        self.default_z_bounds = (-0.45, 0.45)
 
     def _load_small_specimen_config(self):
         """
@@ -225,6 +262,41 @@ class MaterialConfig:
         self.sample_names = ['T1', 'T2', 'T3']
         self.sample_colors = ['jet', 'viridis', 'plasma']
 
+        # === PARTICLE GENERATION PARAMETERS ===
+        # Scale particle counts with volume for small specimens
+        self.base_particles_matrix = int(15000 * volume_ratio)
+        self.base_particles_hybrid_main = int(8000 * volume_ratio)
+        self.base_particles_hybrid_combined = int(5000 * volume_ratio)
+
+        # === COORDINATE BOUNDS ===
+        # Scaled coordinate bounds for small specimens
+        boundary_scale = scale_factor * 1.1  # 10% margin
+        self.default_x_bounds = (-1.95 * boundary_scale, 1.95 * boundary_scale)
+        self.default_y_bounds = (-1.95 * boundary_scale, 1.95 * boundary_scale)
+        self.default_z_bounds = (-0.45 * (self.specimen_thickness_mm / 40.0),
+                                 0.45 * (self.specimen_thickness_mm / 40.0))
+
+        # === POSITIONING PARAMETERS ===
+        # Same positioning factors (scale-independent)
+        self.edge_margin_factor = 0.95
+        self.z_margin_factor = 0.8
+        self.diagonal_pore_ratio = 0.25
+        self.jitter_strength = 0.03 * scale_factor  # Scale jitter with specimen size
+        self.z_jitter_factor = 0.5
+
+        # Edge positioning parameters
+        self.edge_position_factor = 0.9
+        self.corner_position_factor = 0.85
+
+        # === PARTICLE SIZE PARAMETERS ===
+        # Same particle sizing (will be scaled by bounds)
+        self.particle_base_size = 0.8
+        self.particle_size_variation = 1.5
+        self.color_intensity_base = 0.25
+        self.color_intensity_variation = 0.6
+        self.pore_color_intensity_base = 0.8
+        self.pore_color_intensity_variation = 0.2
+
     def get_board_corners(self):
         """
         Calculate the 8 corner vertices of the board geometry.
@@ -311,6 +383,88 @@ class MaterialConfig:
                 'y': self.y_limits,
                 'z': self.z_limits
             }
+        }
+
+    def get_particle_size_parameters(self):
+        """Get particle sizing parameters."""
+        return {
+            'base_size': self.particle_base_size,
+            'size_variation': self.particle_size_variation,
+            'color_intensity_base': self.color_intensity_base,
+            'color_intensity_variation': self.color_intensity_variation,
+            'pore_color_intensity_base': self.pore_color_intensity_base,
+            'pore_color_intensity_variation': self.pore_color_intensity_variation
+        }
+
+    def get_normalized_bounds(self):
+        """Get normalized coordinate bounds for visualizations."""
+        return {
+            'x_bounds': self.matrix_fill_x_bounds,
+            'y_bounds': self.matrix_fill_y_bounds,
+            'z_bounds': self.matrix_fill_z_bounds,
+            'length_norm': self.matrix_length_norm,
+            'width_norm': self.matrix_width_norm
+        }
+
+    def get_dimension_scale_factors(self):
+        """Get dimension scaling factors for board size adjustments."""
+        # Calculate volume scale based on current dimensions vs default 160x160x40
+        volume_scale = (self.board_length_mm * self.board_width_mm *
+                        self.board_thickness_mm) / (160.0 * 160.0 * 40.0)
+        return {
+            'volume_scale': volume_scale,
+            'length_scale': self.board_length_mm / 160.0,
+            'width_scale': self.board_width_mm / 160.0,
+            'thickness_scale': self.board_thickness_mm / 40.0
+        }
+
+    def get_particle_counts(self):
+        """Get particle count parameters for different visualizations."""
+        return {
+            'matrix': self.n_pores_matrix,
+            'individual': self.n_pores_individual,
+            'comparative': self.n_pores_comparative,
+            'density': self.n_pores_density,
+            'hybrid': self.n_pores_hybrid,
+            'hybrid_main': self.base_particles_hybrid_main,
+            'hybrid_combined': self.base_particles_hybrid_combined
+        }
+
+    def get_matrix_parameters(self):
+        """Get all matrix material parameters."""
+        return {
+            'x_bounds': self.matrix_fill_x_bounds,
+            'y_bounds': self.matrix_fill_y_bounds,
+            'z_bounds': self.matrix_fill_z_bounds,
+            'length_norm': self.matrix_length_norm,
+            'width_norm': self.matrix_width_norm,
+            'base_particle_size': self.matrix_base_particle_size,
+            'particle_size_variation': self.matrix_particle_size_variation,
+            'base_particles': self.matrix_base_particles,
+            'particle_alpha': self.matrix_particle_alpha,
+            'batch_size': self.matrix_batch_size,
+            'color_intensity_base': self.matrix_color_intensity_base,
+            'color_intensity_variation': self.matrix_color_intensity_variation
+        }
+
+    def get_positioning_parameters(self):
+        """Get positioning and margin parameters for pore placement."""
+        return {
+            'edge_margin_factor': self.edge_margin_factor,
+            'z_margin_factor': self.z_margin_factor,
+            'diagonal_pore_ratio': self.diagonal_pore_ratio,
+            'jitter_strength': self.jitter_strength,
+            'z_jitter_factor': self.z_jitter_factor,
+            'edge_position_factor': self.edge_position_factor,
+            'corner_position_factor': self.corner_position_factor
+        }
+
+    def get_coordinate_bounds(self):
+        """Get default coordinate bounds for element positioning."""
+        return {
+            'x_bounds': self.default_x_bounds,
+            'y_bounds': self.default_y_bounds,
+            'z_bounds': self.default_z_bounds
         }
 
 
