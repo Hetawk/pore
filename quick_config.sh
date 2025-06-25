@@ -95,6 +95,37 @@ case "$1" in
             --pores-all 400
         ;;
     
+    "tall")
+        echo "📈 Running Tall Board Analysis (Increased Height/Thickness)"
+        echo "   - Board: 160×160×80 mm (double thickness)"
+        echo "   - Individual pores: 600"
+        echo "   - Comparative pores: 400"
+        echo "   - Density pores: 500"
+        echo "   - Matrix pores: 800"
+        echo "   - Hybrid pores: 800"
+        echo "   - Matrix Z-bounds expanded to match taller profile"
+        echo "   - DPI: 300, Figure: 10×12 (portrait for tall view)"
+        echo "   - Modified camera angles for better height visibility"
+        echo ""
+        exec "$SCRIPT_DIR/config_override.sh" \
+            --length 160 \
+            --width 160 \
+            --thickness 80 \
+            --pores-individual 600 \
+            --pores-comparative 400 \
+            --pores-density 500 \
+            --pores-matrix 800 \
+            --pores-hybrid 800 \
+            --min-pore-radius 0.03 \
+            --max-pore-radius 0.08 \
+            --matrix-z-bounds "-1.0,1.0" \
+            --dpi 300 \
+            --figure-size "10,12" \
+            --elevation 20 \
+            --azimuth 45 \
+            --alpha 0.85
+        ;;
+    
     "custom")
         echo "🛠️  Running Custom Configuration"
         echo "   Passing all remaining arguments to config_override.sh"
@@ -115,6 +146,7 @@ Available Presets:
   fast             Fast analysis with reduced quality
   publication      High quality for publications
   large-board      Large board analysis (300×300×80mm)
+  tall             Tall board analysis (increased thickness)
   custom           Pass custom parameters to config_override.sh
 
 Examples:
@@ -123,6 +155,7 @@ Examples:
   $0 fast
   $0 publication
   $0 large-board
+  $0 tall
   $0 custom --diameter 15 --thickness 8
 
 For full parameter control, use config_override.sh directly:
