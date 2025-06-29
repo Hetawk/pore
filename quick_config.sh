@@ -126,6 +126,37 @@ case "$1" in
             --alpha 0.85
         ;;
     
+    "color")
+        echo "🌈 Running Colored Pore Size Visualization (Tall Board + Color Categories)"
+        echo "   - Board: 160×160×80 mm (double thickness)"
+        echo "   - Pore size categories: Micropores, Mesopores, Macropores"
+        echo "   - Colors: Micropores=#FF1493 (pink), Mesopores=#FFFF00 (yellow), Macropores=#00FFFF (cyan)"
+        echo "   - Matrix fill: #cccccc (very light gray, alpha=0.15)"
+        echo "   - Pores: vivid, fully opaque with smooth surfaces"
+        echo ""
+        exec "$SCRIPT_DIR/config_override.sh" \
+            --length 160 \
+            --width 160 \
+            --thickness 80 \
+            --pores-individual 600 \
+            --pores-comparative 400 \
+            --pores-density 500 \
+            --pores-matrix 800 \
+            --pores-hybrid 800 \
+            --min-pore-radius 0.03 \
+            --max-pore-radius 0.08 \
+            --matrix-z-bounds "-1.0,1.0" \
+            --dpi 300 \
+            --figure-size "10,12" \
+            --elevation 20 \
+            --azimuth 45 \
+            --micropore-color "#FF1493" \
+            --mesopore-color "#FFFF00" \
+            --macropore-color "#00FFFF" \
+            --matrix-alpha 0.15 \
+            --alpha 1.0
+        ;;
+    
     "custom")
         echo "🛠️  Running Custom Configuration"
         echo "   Passing all remaining arguments to config_override.sh"
@@ -147,6 +178,7 @@ Available Presets:
   publication      High quality for publications
   large-board      Large board analysis (300×300×80mm)
   tall             Tall board analysis (increased thickness)
+  color            Tall board with colored pore size categories
   custom           Pass custom parameters to config_override.sh
 
 Examples:
@@ -156,6 +188,7 @@ Examples:
   $0 publication
   $0 large-board
   $0 tall
+  $0 color
   $0 custom --diameter 15 --thickness 8
 
 For full parameter control, use config_override.sh directly:
@@ -164,4 +197,5 @@ For full parameter control, use config_override.sh directly:
 EOF
         exit 1
         ;;
+esac
 esac

@@ -12,6 +12,13 @@ from typing import Dict, Any
 import numpy as np
 
 
+# Default color settings for different pore types
+# Even more intense colors that will be clearly visible against matrix
+DEFAULT_MICROPORE_COLOR = "#FF1493"  # Deep pink (Micropores)
+DEFAULT_MESOPORE_COLOR = "#FFFF00"   # Bright yellow (Mesopores) 
+DEFAULT_MACROPORE_COLOR = "#00FFFF"  # Bright cyan (Macropores)
+
+
 class MaterialConfig:
     """
     Configuration class for CSA cement-based insulating board modeling.
@@ -30,6 +37,9 @@ class MaterialConfig:
             Configuration identifier ('default', 'small_specimen', 'custom')
         """
         self.config_name = config_name
+        self.micropore_color = DEFAULT_MICROPORE_COLOR
+        self.mesopore_color = DEFAULT_MESOPORE_COLOR
+        self.macropore_color = DEFAULT_MACROPORE_COLOR
         self._load_configuration(config_name)
 
     def _load_configuration(self, config_name: str):
@@ -152,10 +162,18 @@ class MaterialConfig:
         self.matrix_base_particle_size = 0.8
         self.matrix_particle_size_variation = 1.5
         self.matrix_base_particles = 15000  # Base number of particles
-        self.matrix_particle_alpha = 0.7    # Transparency for matrix particles
+        # Significantly reduced transparency for better contrast
+        self.matrix_particle_alpha = 0.2
         self.matrix_batch_size = 1000       # Batch size for rendering
-        self.matrix_color_intensity_base = 0.3
-        self.matrix_color_intensity_variation = 0.7
+
+        # Reduced intensity for background matrix
+        self.matrix_color_intensity_base = 0.1
+        self.matrix_color_intensity_variation = 0.3
+
+        # === PORE VISUALIZATION PARAMETERS ===
+        self.pore_alpha = 1.0               # Maximum opacity for pores
+        self.pore_edge_width = 0.5          # Add edges to pores for better definition
+        self.pore_edge_color = 'black'      # Black edges to outline pores
 
         # === COORDINATE BOUNDS ===
         # Default coordinate bounds for particle placement
@@ -465,6 +483,41 @@ class MaterialConfig:
             'x_bounds': self.default_x_bounds,
             'y_bounds': self.default_y_bounds,
             'z_bounds': self.default_z_bounds
+        }
+
+    def set_pore_colors(self, micropore=None, mesopore=None, macropore=None):
+        """
+        Set custom colors for different pore types.
+
+        Parameters:
+        -----------
+        micropore : str
+            Color for micropores (hex code or color name)
+        mesopore : str
+            Color for mesopores (hex code or color name)
+        macropore : str
+            Color for macropores (hex code or color name)
+        """
+        if micropore:
+            self.micropore_color = micropore
+        if mesopore:
+            self.mesopore_color = mesopore
+        if macropore:
+            self.macropore_color = macropore
+
+    def get_pore_colors(self):
+        """
+        Get the current colors for different pore types.
+
+        Returns:
+        --------
+        dict
+            Dictionary with keys 'micropore_color', 'mesopore_color', 'macropore_color'
+        """
+        return {
+            "micropore_color": self.micropore_color,
+            "mesopore_color": self.mesopore_color,
+            "macropore_color": self.macropore_color,
         }
 
 

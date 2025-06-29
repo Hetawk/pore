@@ -683,7 +683,8 @@ trap cleanup EXIT
 # ==============================================================================
 
 while [[ $# -gt 0 ]]; do
-    case $1 in
+    key="$1"
+    case $key in
         --config)
             CONFIG_TYPE="$2"
             shift 2
@@ -860,6 +861,26 @@ while [[ $# -gt 0 ]]; do
         --dry-run)
             DRY_RUN="true"
             shift
+            ;;
+        --micropore-color)
+            MICROPORE_COLOR="$2"
+            shift; shift
+            ;;
+        --mesopore-color)
+            MESOPORE_COLOR="$2"
+            shift; shift
+            ;;
+        --macropore-color)
+            MACROPORE_COLOR="$2"
+            shift; shift
+            ;;
+        --matrix-fill-color)
+            MATRIX_FILL_COLOR="$2"
+            shift; shift
+            ;;
+        --matrix-alpha)
+            MATRIX_ALPHA="$2"
+            shift; shift
             ;;
         --help)
             print_usage
@@ -1119,7 +1140,24 @@ log_info "Executing main application with overridden configuration..."
 echo ""
 
 cd "$SCRIPT_DIR"
-if python3 main_temp.py; then
+PYTHON_ARGS=""
+if [[ -n "$MICROPORE_COLOR" ]]; then
+    PYTHON_ARGS="$PYTHON_ARGS --micropore-color $MICROPORE_COLOR"
+fi
+if [[ -n "$MESOPORE_COLOR" ]]; then
+    PYTHON_ARGS="$PYTHON_ARGS --mesopore-color $MESOPORE_COLOR"
+fi
+if [[ -n "$MACROPORE_COLOR" ]]; then
+    PYTHON_ARGS="$PYTHON_ARGS --macropore-color $MACROPORE_COLOR"
+fi
+if [[ -n "$MATRIX_FILL_COLOR" ]]; then
+    PYTHON_ARGS="$PYTHON_ARGS --matrix-fill-color $MATRIX_FILL_COLOR"
+fi
+if [[ -n "$MATRIX_ALPHA" ]]; then
+    PYTHON_ARGS="$PYTHON_ARGS --matrix-alpha $MATRIX_ALPHA"
+fi
+
+if python3 main_temp.py $PYTHON_ARGS; then
     log_success "Application executed successfully with overridden configuration!"
 else
     log_error "Application execution failed"

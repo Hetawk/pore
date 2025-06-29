@@ -10,12 +10,15 @@ macro-porosity and fine-scale material composition.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+from matplotlib.patches import Patch
 from tqdm import tqdm
 from .utils import plot_orange_prism_frame, setup_clean_axes, generate_realistic_pores
 from . import config
 
 
-def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_file, sample_color='jet'):
+def create_combined_pores_matrix_visualization(
+    diam, intr, sample_name, output_file, sample_color='jet'
+):
     """
     Create hybrid computational model combining discrete pores with matrix material.
 
@@ -156,28 +159,91 @@ def create_combined_pores_matrix_visualization(diam, intr, sample_name, output_f
     pore_positions = pore_positions[sort_indices]
     scaled_radii = scaled_radii[sort_indices]
 
+    # Get pore colors from config
+    pore_colors = current_config.get_pore_colors()
+    micropore_color = pore_colors["micropore_color"]
+    mesopore_color = pore_colors["mesopore_color"]
+    macropore_color = pore_colors["macropore_color"]
+
+    # Determine pore size ranges for color assignment
+    min_radius = np.min(scaled_radii)
+    max_radius = np.max(scaled_radii)
+    radius_range = max_radius - min_radius
+
+    # Create size boundaries for the three pore categories
+    micropore_max = min_radius + radius_range * 0.33
+    mesopore_max = min_radius + radius_range * 0.66
+
     # Render pores as spheres (with higher alpha to stand out from sand)
     print(f"Rendering {len(pore_positions)} pores for {sample_name}...")
     for i in tqdm(range(len(pore_positions)), desc="Rendering pores"):
         radius = scaled_radii[i]
-        # Higher intensity for visibility
-        color = colormap(size_params['pore_color_intensity_base'] +
-                         size_params['pore_color_intensity_variation'] * norm(radius))
-
+        
+        # Assign color based on pore size
+        if radius <= micropore_max:
+            color = micropore_color
+        elif radius <= mesopore_max:
+            color = mesopore_color
+        else:
+            color = macropore_color
+            
         # Create a sphere for each pore
-        u = np.linspace(0, 2 * np.pi, 10)  # Lower resolution for performance
-        v = np.linspace(0, np.pi, 6)
+        u = np.linspace(0, 2 * np.pi, 12)
+        v = np.linspace(0, np.pi, 8)
         x = pore_positions[i, 0] + radius * np.outer(np.cos(u), np.sin(v))
         y = pore_positions[i, 1] + radius * np.outer(np.sin(u), np.sin(v))
-        z = pore_positions[i, 2] + radius * \
-            np.outer(np.ones(np.size(u)), np.cos(v))
+        z = pore_positions[i, 2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
 
-        ax.plot_surface(x, y, z, color=color, shade=True, alpha=0.95,
-                        rstride=1, cstride=1, linewidth=0)
+        # Plot with maximum opacity but NO edge lines
+        ax.plot_surface(x, y, z, color=color, shade=True, alpha=1.0,
+                      rstride=1, cstride=1, linewidth=0)
 
     # Add sample information
     ax.text2D(0.05, 0.95, sample_name, transform=ax.transAxes, fontsize=12,
               fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
+
+    # Add legend for pore size categories
+    pore_colors = current_config.get_pore_colors()
+    micropore_color = pore_colors["micropore_color"]
+    mesopore_color = pore_colors["mesopore_color"]
+    macropore_color = pore_colors["macropore_color"]
+
+    # Define the actual size ranges for legend (replace with your actual values or get from config)
+    micropore_range = current_config.micropore_range if hasattr(
+        current_config, "micropore_range") else (0.03, 0.05)
+    mesopore_range = current_config.mesopore_range if hasattr(
+        current_config, "mesopore_range") else (0.05, 0.08)
+    macropore_range = current_config.macropore_range if hasattr(
+        current_config, "macropore_range") else (0.08, 0.15)
+
+    # Use marker size proportional to the mean of each range (scaled for legend visibility)
+    def legend_marker_size(r):
+        return 800 * (r ** 2)  # scale factor for visibility
+
+    micropore_mean = np.mean(micropore_range)
+    mesopore_mean = np.mean(mesopore_range)
+    macropore_mean = np.mean(macropore_range)
+
+    legend_elements = [
+        Patch(facecolor=micropore_color, edgecolor='k',
+              label=f'Micropores ({micropore_range[0]:.2f}-{micropore_range[1]:.2f})', linewidth=1),
+        Patch(facecolor=mesopore_color, edgecolor='k',
+              label=f'Mesopores ({mesopore_range[0]:.2f}-{mesopore_range[1]:.2f})', linewidth=1),
+        Patch(facecolor=macropore_color, edgecolor='k',
+              label=f'Macropores ({macropore_range[0]:.2f}-{macropore_range[1]:.2f})', linewidth=1),
+    ]
+
+    # Legend: show a circle marker for each pore type, colored as in the plot
+    import matplotlib.lines as mlines
+    legend_handles = [
+        mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
+                      markersize=12, label='Micropore'),
+        mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
+                      markersize=12, label='Mesopore'),
+        mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
+                      markersize=12, label='Macropore'),
+    ]
+    ax.legend(handles=legend_handles, loc='upper right', title='Pore Types')
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
@@ -324,4 +390,14 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
     plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
     print(
         f"Combined three-sample pores + sand visualization saved to {output_file}")
+    plt.close()
+    print(
+        f"Combined three-sample pores + sand visualization saved to {output_file}")
+    plt.close()
+    print(
+        f"Combined three-sample pores + sand visualization saved to {output_file}")
+    plt.close()
+    print(
+        f"Combined three-sample pores + sand visualization saved to {output_file}")
+    plt.close()
     plt.close()
