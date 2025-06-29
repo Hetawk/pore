@@ -14,6 +14,7 @@ Configuration System:
 """
 
 import os
+from app import config
 from app.data_processor import load_and_clean_data, sort_by_diameter
 from app.individual_board_modeling import create_individual_sample_visualization
 from app.comparative_analysis import create_combined_three_samples_visualization
@@ -25,6 +26,32 @@ from app.hybrid_pore_matrix_modeling import (
 )
 from app.config import set_configuration, get_config
 from app.config import set_configuration, get_config, get_board_dimensions
+from app.advanced_pore_analysis import create_advanced_pore_analysis
+import argparse
+
+
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="3D Pore Structure Modeling in CSA Cement Boards")
+
+    # Add advanced analysis option
+    parser.add_argument('--advanced-analysis', type=str, default='false',
+                        help='Enable advanced statistical analysis (true/false)')
+
+    # Add color-related arguments
+    parser.add_argument('--micropore-color', type=str,
+                        help='Color for micropores')
+    parser.add_argument('--mesopore-color', type=str,
+                        help='Color for mesopores')
+    parser.add_argument('--macropore-color', type=str,
+                        help='Color for macropores')
+    parser.add_argument('--matrix-fill-color', type=str,
+                        help='Color for matrix fill')
+    parser.add_argument('--matrix-alpha', type=float,
+                        help='Alpha transparency for matrix')
+
+    return parser.parse_args()
 
 
 def main():
@@ -49,22 +76,23 @@ def main():
 
     # Apply the selected configuration
     set_configuration(CONFIG_TYPE)
-    config = get_config()
+    # Rename this to avoid confusion with the module name
+    config_obj = get_config()
 
     # Display current configuration
     print(f"\n{'='*60}")
     print(
-        f"3D PORE STRUCTURE MODELING - Configuration: {config.config_name.upper()}")
+        f"3D PORE STRUCTURE MODELING - Configuration: {config_obj.config_name.upper()}")
     print(f"{'='*60}")
 
     board_dims = get_board_dimensions()
     print(
         f"Board dimensions: {board_dims[0]:.1f} × {board_dims[1]:.1f} × {board_dims[2]:.1f} mm")
     print(
-        f"Pore counts: Individual={config.n_pores_individual}, Comparative={config.n_pores_comparative}")
+        f"Pore counts: Individual={config_obj.n_pores_individual}, Comparative={config_obj.n_pores_comparative}")
     print(
-        f"Visualization resolution: {config.sphere_u_resolution}×{config.sphere_v_resolution}")
-    print(f"Output format: {config.output_format} at {config.dpi} DPI")
+        f"Visualization resolution: {config_obj.sphere_u_resolution}×{config_obj.sphere_v_resolution}")
+    print(f"Output format: {config_obj.output_format} at {config_obj.dpi} DPI")
     print(f"{'='*60}\n")
 
     # Experimental mercury intrusion porosimetry data location
@@ -163,6 +191,49 @@ def main():
     create_combined_three_samples_pores_matrix_visualization(
         diam1, intr1, diam2, intr2, diam3, intr3,
         os.path.join(output_dir, "combined_pores_matrix_filled.png"))
+
+    # Get arguments
+    args = parse_args()
+
+    # Configure advanced analysis - use the config module here, not the local variable
+    current_config = get_config()  # Use the function directly
+
+    # Set colors if provided
+    if args.micropore_color or args.mesopore_color or args.macropore_color:
+        current_config.set_pore_colors(
+            micropore=args.micropore_color,
+            mesopore=args.mesopore_color,
+            macropore=args.macropore_color
+        )
+
+    # Set matrix parameters if provided
+    if args.matrix_fill_color:
+        current_config.set_matrix_fill_color(args.matrix_fill_color)
+
+    if args.matrix_alpha is not None:
+        current_config.matrix_particle_alpha = args.matrix_alpha
+
+    # Enable advanced analysis if requested
+    enable_advanced = args.advanced_analysis.lower() in ['true', 'yes', '1']
+    current_config.enable_advanced_analysis = enable_advanced
+
+    # Advanced pore analysis if enabled
+    if hasattr(current_config, 'enable_advanced_analysis') and current_config.enable_advanced_analysis:
+        print("\n" + "="*60)
+        print("Creating advanced statistical pore analysis...")
+        print("="*60)
+
+        create_advanced_pore_analysis(
+            diam1, intr1, "T1",
+            os.path.join(output_dir, "T1_advanced_analysis.png"))
+
+        create_advanced_pore_analysis(
+            diam2, intr2, "T2",
+            os.path.join(output_dir, "T2_advanced_analysis.png"))
+
+        create_advanced_pore_analysis(
+            diam3, intr3, "T3",
+            os.path.join(output_dir, "T3_advanced_analysis.png"))
 
     # Final summary
     print("\n" + "="*80)

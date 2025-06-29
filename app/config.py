@@ -15,7 +15,7 @@ import numpy as np
 # Default color settings for different pore types
 # Even more intense colors that will be clearly visible against matrix
 DEFAULT_MICROPORE_COLOR = "#FF1493"  # Deep pink (Micropores)
-DEFAULT_MESOPORE_COLOR = "#FFFF00"   # Bright yellow (Mesopores) 
+DEFAULT_MESOPORE_COLOR = "#FFFF00"   # Bright yellow (Mesopores)
 DEFAULT_MACROPORE_COLOR = "#00FFFF"  # Bright cyan (Macropores)
 
 
@@ -40,6 +40,8 @@ class MaterialConfig:
         self.micropore_color = DEFAULT_MICROPORE_COLOR
         self.mesopore_color = DEFAULT_MESOPORE_COLOR
         self.macropore_color = DEFAULT_MACROPORE_COLOR
+        self.matrix_fill_color = "#cccccc"  # Default matrix fill color
+        self.enable_advanced_analysis = False  # Disabled by default
         self._load_configuration(config_name)
 
     def _load_configuration(self, config_name: str):
@@ -158,17 +160,24 @@ class MaterialConfig:
         self.matrix_length_norm = 1.95
         self.matrix_width_norm = 1.95
 
-        # Particle size parameters for matrix fill
-        self.matrix_base_particle_size = 0.8
-        self.matrix_particle_size_variation = 1.5
-        self.matrix_base_particles = 15000  # Base number of particles
-        # Significantly reduced transparency for better contrast
-        self.matrix_particle_alpha = 0.2
-        self.matrix_batch_size = 1000       # Batch size for rendering
+        # Particle size parameters for matrix fill - INCREASE SIZES FOR VISIBILITY
+        self.matrix_base_particle_size = 2.0      # Increased from 0.8 for visibility
+        self.matrix_particle_size_variation = 2.5  # Increased from 1.5 for contrast
+        self.matrix_base_particles = 15000        # Base number of particles
 
-        # Reduced intensity for background matrix
-        self.matrix_color_intensity_base = 0.1
-        self.matrix_color_intensity_variation = 0.3
+        # Restore to original value for better visibility
+        self.matrix_particle_alpha = 0.5          # Increased from 0.2 for visibility
+        self.matrix_batch_size = 1000             # Batch size for rendering
+
+        # Enhanced color intensity for better visibility
+        self.matrix_color_intensity_base = 0.3      # Increased from 0.1
+        self.matrix_color_intensity_variation = 0.5  # Increased from 0.3
+
+        # === PARTICLE GENERATION PARAMETERS ===
+        # Increase particle counts for all visualizations
+        self.base_particles_matrix = 20000        # Increased from 15000
+        self.base_particles_hybrid_main = 15000    # Increased from 8000
+        self.base_particles_hybrid_combined = 10000  # Increased from 5000
 
         # === PORE VISUALIZATION PARAMETERS ===
         self.pore_alpha = 1.0               # Maximum opacity for pores
@@ -314,6 +323,24 @@ class MaterialConfig:
         self.color_intensity_variation = 0.6
         self.pore_color_intensity_base = 0.8
         self.pore_color_intensity_variation = 0.2
+
+    def set_advanced_analysis(self, enable=True):
+        """Enable or disable advanced analysis visualizations."""
+        self.enable_advanced_analysis = enable
+
+    def set_matrix_fill_color(self, color):
+        """Set the fill color for matrix material."""
+        self.matrix_fill_color = color
+
+    def get_advanced_analysis_params(self):
+        """Get parameters for advanced pore analysis."""
+        return {
+            'enabled': self.enable_advanced_analysis,
+            'micropore_max_radius': self.min_pore_radius + (self.max_pore_radius - self.min_pore_radius) / 3,
+            'mesopore_max_radius': self.min_pore_radius + 2 * (self.max_pore_radius - self.min_pore_radius) / 3,
+            'analysis_dpi': getattr(self, 'analysis_dpi', self.dpi),
+            'analysis_figure_size': getattr(self, 'analysis_figure_size', (10, 12)),
+        }
 
     def get_board_corners(self):
         """

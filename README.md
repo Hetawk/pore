@@ -222,3 +222,11 @@ If you use this computational modeling system in your research, please cite:
 - **Application Domain**: Sustainable construction materials with agricultural waste
 - **Computational Approach**: 3D pore structure modeling from experimental MIP data
 - **Scientific Impact**: Enhanced understanding of porosity-thermal property relationships
+
+
+```bash
+
+./quick_config.sh color
+./quick_config.sh color2
+
+```

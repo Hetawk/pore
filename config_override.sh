@@ -882,6 +882,10 @@ while [[ $# -gt 0 ]]; do
             MATRIX_ALPHA="$2"
             shift; shift
             ;;
+        --advanced-analysis)
+            ADVANCED_ANALYSIS="$2"
+            shift; shift
+            ;;
         --help)
             print_usage
             exit 0
@@ -1156,8 +1160,15 @@ fi
 if [[ -n "$MATRIX_ALPHA" ]]; then
     PYTHON_ARGS="$PYTHON_ARGS --matrix-alpha $MATRIX_ALPHA"
 fi
+if [[ -n "$ADVANCED_ANALYSIS" ]]; then
+    if [[ "$ADVANCED_ANALYSIS" == "yes" || "$ADVANCED_ANALYSIS" == "true" || "$ADVANCED_ANALYSIS" == "1" ]]; then
+        PYTHON_ARGS="$PYTHON_ARGS --advanced-analysis true"
+    else
+        PYTHON_ARGS="$PYTHON_ARGS --advanced-analysis false"
+    fi
+fi
 
-if python3 main_temp.py $PYTHON_ARGS; then
+if python main.py $PYTHON_ARGS; then
     log_success "Application executed successfully with overridden configuration!"
 else
     log_error "Application execution failed"

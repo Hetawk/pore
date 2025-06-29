@@ -121,7 +121,7 @@ def create_combined_pores_matrix_visualization(
     sizes_sand_sorted = np.array(sand_sizes)[sand_sort_indices]
     colors_sand_sorted = np.array(sand_colors)[sand_sort_indices]
 
-    # Render sand particles with high visibility (using matrix parameters)
+    # Render sand particles with enhanced visibility (using matrix parameters)
     batch_size = matrix_params['batch_size']
     for batch_start in range(0, len(x_sand_sorted), batch_size):
         batch_end = min(batch_start + batch_size, len(x_sand_sorted))
@@ -132,7 +132,8 @@ def create_combined_pores_matrix_visualization(
                    s=sizes_sand_sorted[batch_start:batch_end],
                    c=colors_sand_sorted[batch_start:batch_end],
                    alpha=matrix_params['particle_alpha'],
-                   edgecolors='none')
+                   edgecolors='none',
+                   linewidth=0)  # Force no lines
 
     # 2. Then, add realistic pores on top
     print(f"Adding realistic pores for {sample_name}...")
@@ -178,7 +179,7 @@ def create_combined_pores_matrix_visualization(
     print(f"Rendering {len(pore_positions)} pores for {sample_name}...")
     for i in tqdm(range(len(pore_positions)), desc="Rendering pores"):
         radius = scaled_radii[i]
-        
+
         # Assign color based on pore size
         if radius <= micropore_max:
             color = micropore_color
@@ -186,17 +187,18 @@ def create_combined_pores_matrix_visualization(
             color = mesopore_color
         else:
             color = macropore_color
-            
+
         # Create a sphere for each pore
         u = np.linspace(0, 2 * np.pi, 12)
         v = np.linspace(0, np.pi, 8)
         x = pore_positions[i, 0] + radius * np.outer(np.cos(u), np.sin(v))
         y = pore_positions[i, 1] + radius * np.outer(np.sin(u), np.sin(v))
-        z = pore_positions[i, 2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+        z = pore_positions[i, 2] + radius * \
+            np.outer(np.ones(np.size(u)), np.cos(v))
 
         # Plot with maximum opacity but NO edge lines
         ax.plot_surface(x, y, z, color=color, shade=True, alpha=1.0,
-                      rstride=1, cstride=1, linewidth=0)
+                        rstride=1, cstride=1, linewidth=0)
 
     # Add sample information
     ax.text2D(0.05, 0.95, sample_name, transform=ax.transAxes, fontsize=12,
