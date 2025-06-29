@@ -162,9 +162,21 @@ def create_combined_pores_matrix_visualization(
 
     # Get pore colors from config
     pore_colors = current_config.get_pore_colors()
-    micropore_color = pore_colors["micropore_color"]
-    mesopore_color = pore_colors["mesopore_color"]
-    macropore_color = pore_colors["macropore_color"]
+
+    # CHECK FOR SAMPLE-SPECIFIC COLOR OVERRIDE
+    if hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors:
+        # Use sample-specific color for all pore types (no size-based distinction)
+        sample_color = current_config.sample_pore_colors[sample_name]
+        micropore_color = sample_color
+        mesopore_color = sample_color
+        macropore_color = sample_color
+        print(
+            f"[DEBUG] Using sample-specific color for {sample_name}: {sample_color}")
+    else:
+        # Use default size-based colors
+        micropore_color = pore_colors["micropore_color"]
+        mesopore_color = pore_colors["mesopore_color"]
+        macropore_color = pore_colors["macropore_color"]
 
     # Determine pore size ranges for color assignment
     min_radius = np.min(scaled_radii)
@@ -204,48 +216,51 @@ def create_combined_pores_matrix_visualization(
     ax.text2D(0.05, 0.95, sample_name, transform=ax.transAxes, fontsize=12,
               fontweight='bold', bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3'))
 
-    # Add legend for pore size categories
-    pore_colors = current_config.get_pore_colors()
-    micropore_color = pore_colors["micropore_color"]
-    mesopore_color = pore_colors["mesopore_color"]
-    macropore_color = pore_colors["macropore_color"]
+    # Add legend for pore size categories - ONLY if not using sample-specific colors
+    if not (hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors):
+        pore_colors = current_config.get_pore_colors()
+        micropore_color = pore_colors["micropore_color"]
+        mesopore_color = pore_colors["mesopore_color"]
+        macropore_color = pore_colors["macropore_color"]
 
-    # Define the actual size ranges for legend (replace with your actual values or get from config)
-    micropore_range = current_config.micropore_range if hasattr(
-        current_config, "micropore_range") else (0.03, 0.05)
-    mesopore_range = current_config.mesopore_range if hasattr(
-        current_config, "mesopore_range") else (0.05, 0.08)
-    macropore_range = current_config.macropore_range if hasattr(
-        current_config, "macropore_range") else (0.08, 0.15)
+        # Define the actual size ranges for legend (replace with your actual values or get from config)
+        micropore_range = current_config.micropore_range if hasattr(
+            current_config, "micropore_range") else (0.03, 0.05)
+        mesopore_range = current_config.mesopore_range if hasattr(
+            current_config, "mesopore_range") else (0.05, 0.08)
+        macropore_range = current_config.macropore_range if hasattr(
+            current_config, "macropore_range") else (0.08, 0.15)
 
-    # Use marker size proportional to the mean of each range (scaled for legend visibility)
-    def legend_marker_size(r):
-        return 800 * (r ** 2)  # scale factor for visibility
+        # Use marker size proportional to the mean of each range (scaled for legend visibility)
+        def legend_marker_size(r):
+            return 800 * (r ** 2)  # scale factor for visibility
 
-    micropore_mean = np.mean(micropore_range)
-    mesopore_mean = np.mean(mesopore_range)
-    macropore_mean = np.mean(macropore_range)
+        micropore_mean = np.mean(micropore_range)
+        mesopore_mean = np.mean(mesopore_range)
+        macropore_mean = np.mean(macropore_range)
 
-    legend_elements = [
-        Patch(facecolor=micropore_color, edgecolor='k',
-              label=f'Micropores ({micropore_range[0]:.2f}-{micropore_range[1]:.2f})', linewidth=1),
-        Patch(facecolor=mesopore_color, edgecolor='k',
-              label=f'Mesopores ({mesopore_range[0]:.2f}-{mesopore_range[1]:.2f})', linewidth=1),
-        Patch(facecolor=macropore_color, edgecolor='k',
-              label=f'Macropores ({macropore_range[0]:.2f}-{macropore_range[1]:.2f})', linewidth=1),
-    ]
+        legend_elements = [
+            Patch(facecolor=micropore_color, edgecolor='k',
+                  label=f'Micropores ({micropore_range[0]:.2f}-{micropore_range[1]:.2f})', linewidth=1),
+            Patch(facecolor=mesopore_color, edgecolor='k',
+                  label=f'Mesopores ({mesopore_range[0]:.2f}-{mesopore_range[1]:.2f})', linewidth=1),
+            Patch(facecolor=macropore_color, edgecolor='k',
+                  label=f'Macropores ({macropore_range[0]:.2f}-{macropore_range[1]:.2f})', linewidth=1),
+        ]
 
-    # Legend: show a circle marker for each pore type, colored as in the plot
-    import matplotlib.lines as mlines
-    legend_handles = [
-        mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
-                      markersize=12, label='Micropore'),
-        mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
-                      markersize=12, label='Mesopore'),
-        mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
-                      markersize=12, label='Macropore'),
-    ]
-    ax.legend(handles=legend_handles, loc='upper right', title='Pore Types')
+        # Legend: show a circle marker for each pore type, colored as in the plot
+        import matplotlib.lines as mlines
+        legend_handles = [
+            mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
+                          markersize=12, label='Micropore'),
+            mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
+                          markersize=12, label='Mesopore'),
+            mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
+                          markersize=12, label='Macropore'),
+        ]
+        ax.legend(handles=legend_handles,
+                  loc='upper right', title='Pore Types')
+    # If using sample-specific colors, don't show legend
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
