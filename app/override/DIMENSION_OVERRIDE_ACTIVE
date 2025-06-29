@@ -1,0 +1,2 @@
+This file indicates that the dimension override is active.
+If you're seeing the default dimensions, check that app/override is being imported.
