@@ -178,9 +178,21 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
 
     # Get pore colors from config - same as in hybrid_pore_matrix_modeling.py
     pore_colors = current_config.get_pore_colors()
-    micropore_color = pore_colors["micropore_color"]
-    mesopore_color = pore_colors["mesopore_color"]
-    macropore_color = pore_colors["macropore_color"]
+
+    # CHECK FOR SAMPLE-SPECIFIC COLOR OVERRIDE (for dim100color0advanced)
+    if hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors:
+        # Use sample-specific color for all pore types (no size-based distinction)
+        sample_color = current_config.sample_pore_colors[sample_name]
+        micropore_color = sample_color
+        mesopore_color = sample_color
+        macropore_color = sample_color
+        print(
+            f"[DEBUG] Advanced analysis using sample-specific color for {sample_name}: {sample_color}")
+    else:
+        # Use default size-based colors
+        micropore_color = pore_colors["micropore_color"]
+        mesopore_color = pore_colors["mesopore_color"]
+        macropore_color = pore_colors["macropore_color"]
 
     # Determine pore size ranges for color assignment
     min_radius = np.min(scaled_radii)
@@ -197,13 +209,17 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     for i in range(len(pore_positions)):
         radius = scaled_radii[i]
 
-        # Assign color based on pore size categories
-        if radius <= micropore_max:
-            color = micropore_color
-        elif radius <= mesopore_max:
-            color = mesopore_color
+        # Use single color for all pores when sample-specific colors are enabled
+        if hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors:
+            color = current_config.sample_pore_colors[sample_name]
         else:
-            color = macropore_color
+            # Assign color based on pore size categories (original behavior)
+            if radius <= micropore_max:
+                color = micropore_color
+            elif radius <= mesopore_max:
+                color = mesopore_color
+            else:
+                color = macropore_color
 
         # Create a sphere for each pore
         u = np.linspace(0, 2 * np.pi, 12)
@@ -236,16 +252,19 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     cbar.set_ticks(tick_values)
     cbar.set_ticklabels([f"{v:.4f}" for v in tick_values])
 
-    # Add legend for pore size categories
-    legend_handles = [
-        mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
-                      markersize=12, label='Micropore'),
-        mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
-                      markersize=12, label='Mesopore'),
-        mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
-                      markersize=12, label='Macropore'),
-    ]
-    ax1.legend(handles=legend_handles, loc='upper right', title='Pore Types')
+    # Add legend for pore size categories - ONLY if not using sample-specific colors
+    if not (hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors):
+        legend_handles = [
+            mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
+                          markersize=12, label='Micropore'),
+            mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
+                          markersize=12, label='Mesopore'),
+            mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
+                          markersize=12, label='Macropore'),
+        ]
+        ax1.legend(handles=legend_handles,
+                   loc='upper right', title='Pore Types')
+    # If using sample-specific colors, don't show legend
 
     # Set viewing angle to match other visualizations
     ax1.view_init(elev=current_config.view_elevation,
