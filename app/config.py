@@ -190,6 +190,19 @@ class MaterialConfig:
         self.default_y_bounds = (-1.95, 1.95)
         self.default_z_bounds = (-0.45, 0.45)
 
+        # === ADVANCED ANALYSIS PARAMETERS ===
+        # Parameters for advanced statistical visualization
+        # Colormap for volume colorbar ('jet', 'viridis', etc.)
+        self.advanced_colorbar_colormap = 'jet'
+        self.advanced_tick_count = 8                # Number of ticks on volume colorbar
+        # Number of bins in diameter histogram
+        self.advanced_bins_count = 30
+        # Jitter amount for sphericity points
+        self.advanced_jitter_amount = 1.5
+        # Position for statistics text
+        self.advanced_stats_position = (0.5, 0.98)
+        self.advanced_colorbar_formatter = ':.4f'  # Format for colorbar tick labels
+
     def _load_small_specimen_config(self):
         """
         Configuration for small circular specimen testing.
@@ -335,11 +348,14 @@ class MaterialConfig:
     def get_advanced_analysis_params(self):
         """Get parameters for advanced pore analysis."""
         return {
-            'enabled': self.enable_advanced_analysis,
+            'enabled': getattr(self, 'enable_advanced_analysis', False),
+            'colorbar_colormap': getattr(self, 'advanced_colorbar_colormap', 'jet'),
+            'tick_count': getattr(self, 'advanced_tick_count', 8),
+            'bins_count': getattr(self, 'advanced_bins_count', 30),
+            'jitter': getattr(self, 'advanced_jitter_amount', 1.5),
+            'stats_position': getattr(self, 'advanced_stats_position', (0.5, 0.98)),
             'micropore_max_radius': self.min_pore_radius + (self.max_pore_radius - self.min_pore_radius) / 3,
             'mesopore_max_radius': self.min_pore_radius + 2 * (self.max_pore_radius - self.min_pore_radius) / 3,
-            'analysis_dpi': getattr(self, 'analysis_dpi', self.dpi),
-            'analysis_figure_size': getattr(self, 'analysis_figure_size', (10, 12)),
         }
 
     def get_board_corners(self):

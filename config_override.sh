@@ -886,6 +886,21 @@ while [[ $# -gt 0 ]]; do
             ADVANCED_ANALYSIS="$2"
             shift; shift
             ;;
+        --advanced-colormap)
+            ADVANCED_COLORMAP="$2"
+            shift; shift
+            ;;
+        
+        --advanced-tick-count)
+            ADVANCED_TICK_COUNT="$2"
+            shift; shift
+            ;;
+        
+        --advanced-bins)
+            ADVANCED_BINS="$2"
+            shift; shift
+            ;;
+        
         --help)
             print_usage
             exit 0
@@ -1167,6 +1182,25 @@ if [[ -n "$ADVANCED_ANALYSIS" ]]; then
         PYTHON_ARGS="$PYTHON_ARGS --advanced-analysis false"
     fi
 fi
+
+# Update handle_python_arguments() function
+handle_python_arguments() {
+    # ...existing code...
+    
+    if [[ -n "$ADVANCED_COLORMAP" ]]; then
+        PYTHON_ARGS="$PYTHON_ARGS --advanced-colormap $ADVANCED_COLORMAP"
+    fi
+
+    if [[ -n "$ADVANCED_TICK_COUNT" ]]; then
+        PYTHON_ARGS="$PYTHON_ARGS --advanced-tick-count $ADVANCED_TICK_COUNT"
+    fi
+
+    if [[ -n "$ADVANCED_BINS" ]]; then
+        PYTHON_ARGS="$PYTHON_ARGS --advanced-bins $ADVANCED_BINS"
+    fi
+    
+    # ...existing code...
+}
 
 if python main.py $PYTHON_ARGS; then
     log_success "Application executed successfully with overridden configuration!"

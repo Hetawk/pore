@@ -35,11 +35,19 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="3D Pore Structure Modeling in CSA Cement Boards")
 
-    # Add advanced analysis option
+    # Advanced analysis options
     parser.add_argument('--advanced-analysis', type=str, default='false',
                         help='Enable advanced statistical analysis (true/false)')
 
-    # Add color-related arguments
+    # Advanced visualization parameters
+    parser.add_argument('--advanced-colormap', type=str,
+                        help='Colormap for advanced analysis (e.g., jet, viridis)')
+    parser.add_argument('--advanced-tick-count', type=int,
+                        help='Number of ticks on colorbar in advanced analysis')
+    parser.add_argument('--advanced-bins', type=int,
+                        help='Number of bins in diameter histogram')
+
+    # Color-related arguments
     parser.add_argument('--micropore-color', type=str,
                         help='Color for micropores')
     parser.add_argument('--mesopore-color', type=str,
@@ -195,8 +203,8 @@ def main():
     # Get arguments
     args = parse_args()
 
-    # Configure advanced analysis - use the config module here, not the local variable
-    current_config = get_config()  # Use the function directly
+    # Configure advanced analysis
+    current_config = get_config()
 
     # Set colors if provided
     if args.micropore_color or args.mesopore_color or args.macropore_color:
@@ -216,6 +224,16 @@ def main():
     # Enable advanced analysis if requested
     enable_advanced = args.advanced_analysis.lower() in ['true', 'yes', '1']
     current_config.enable_advanced_analysis = enable_advanced
+
+    # Set advanced visualization parameters if provided
+    if args.advanced_colormap:
+        current_config.advanced_colorbar_colormap = args.advanced_colormap
+
+    if args.advanced_tick_count:
+        current_config.advanced_tick_count = args.advanced_tick_count
+
+    if args.advanced_bins:
+        current_config.advanced_bins_count = args.advanced_bins
 
     # Advanced pore analysis if enabled
     if hasattr(current_config, 'enable_advanced_analysis') and current_config.enable_advanced_analysis:

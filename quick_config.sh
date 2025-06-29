@@ -154,10 +154,9 @@ case "$1" in
             --mesopore-color "#FFFF00" \
             --macropore-color "#00FFFF" \
             --matrix-alpha 0.15 \
-            --alpha 1.0 \
-            --advanced-analysis yes
+            --alpha 1.0
         ;;
-    
+
     "color2")
         echo "🎨 Running Alternative Color Scheme (Enhanced Contrast)"
         echo "   - Board: 160×160×80 mm (double thickness)"
@@ -188,7 +187,37 @@ case "$1" in
             --matrix-fill-color "#333333" \
             --matrix-alpha 0.1 \
             --alpha 1.0 \
-            --advanced-analysis yes
+            --advanced-analysis false
+        ;;
+        
+    "advanced")
+        echo "📊 Running Advanced Pore Analysis Visualization"
+        echo "   - Board: 160×160×80 mm (double thickness)"
+        echo "   - Statistical analysis of pore distribution"
+        echo "   - Volume histogram and sphericity analysis"
+        echo "   - Categorical coloring with volume colorbar"
+        echo ""
+        exec "$SCRIPT_DIR/config_override.sh" \
+            --length 160 \
+            --width 160 \
+            --thickness 80 \
+            --min-pore-radius 0.03 \
+            --max-pore-radius 0.08 \
+            --matrix-z-bounds "-1.0,1.0" \
+            --dpi 300 \
+            --figure-size "10,12" \
+            --elevation 20 \
+            --azimuth 45 \
+            --micropore-color "#FF0000" \
+            --mesopore-color "#00FF00" \
+            --macropore-color "#0000FF" \
+            --matrix-fill-color "#333333" \
+            --matrix-alpha 0.1 \
+            --alpha 1.0 \
+            --advanced-analysis true \
+            --advanced-colormap "jet" \
+            --advanced-tick-count 8 \
+            --advanced-bins 30
         ;;
 
     "custom")
@@ -214,6 +243,7 @@ Available Presets:
   tall             Tall board analysis (increased thickness)
   color            Tall board with colored pore categories (pink/yellow/cyan)
   color2           Alternative color scheme with RGB colors (red/green/blue)
+  advanced         Advanced statistical analysis of pore distribution
   custom           Pass custom parameters to config_override.sh
 
 Examples:
@@ -225,10 +255,8 @@ Examples:
   $0 tall
   $0 color
   $0 color2
+  $0 advanced
   $0 custom --diameter 15 --thickness 8
-
-For full parameter control, use config_override.sh directly:
-  ./config_override.sh --help
 
 EOF
         exit 1

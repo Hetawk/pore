@@ -9,7 +9,8 @@ Generates detailed statistical visualizations of pore properties including
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 import os
 from tqdm import tqdm
 from . import config
@@ -216,6 +217,25 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
         ax1.plot_surface(x, y, z, color=color, shade=True, alpha=1.0,
                          rstride=1, cstride=1, linewidth=0)
 
+    # Get advanced visualization parameters from config
+    advanced_params = current_config.get_advanced_analysis_params()
+
+    # Create a colorbar for volume visualization
+    # Use 'jet' colormap for vibrant, distinct colors
+    volume_norm = Normalize(vmin=0, vmax=volumes.max())
+    volume_sm = ScalarMappable(cmap='jet', norm=volume_norm)
+    volume_sm.set_array([])  # Required for older matplotlib versions
+
+    # Add colorbar that shows volume ranges
+    cbar = plt.colorbar(volume_sm, ax=ax1, pad=0.1, shrink=0.7)
+    cbar.set_label('Vol. mm³', rotation=270, labelpad=15, fontweight='bold')
+
+    # Set 8 evenly spaced ticks with proper formatting
+    tick_count = 8
+    tick_values = np.linspace(0, volumes.max(), tick_count)
+    cbar.set_ticks(tick_values)
+    cbar.set_ticklabels([f"{v:.4f}" for v in tick_values])
+
     # Add legend for pore size categories
     legend_handles = [
         mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
@@ -227,7 +247,7 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     ]
     ax1.legend(handles=legend_handles, loc='upper right', title='Pore Types')
 
-    # Set viewing angle to match hybrid visualization
+    # Set viewing angle to match other visualizations
     ax1.view_init(elev=current_config.view_elevation,
                   azim=current_config.view_azimuth)
 
@@ -238,8 +258,8 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     avg_diameter = np.mean(diameters)
     avg_sphericity = np.mean(sphericity)
 
-    # Create binned histogram
-    bins = np.linspace(0, 150, 30)  # Bins from 0 to 150 μm
+    # Create histogram with bins
+    bins = np.linspace(0, 150, 30)  # 30 bins from 0 to 150μm
     counts, bin_edges = np.histogram(diameters, bins=bins)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
@@ -251,10 +271,13 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     ax2.plot(bin_centers, counts, 'r-', lw=2)
     ax2.fill_between(bin_centers, counts, alpha=0.3, color='red')
 
-    # Setup histogram labels
-    ax2.set_xlabel('Equivalent diameter (μm)')
-    ax2.set_ylabel('Frequency Counts')
+    # Setup histogram labels with more frequent ticks (every 10 units)
+    ax2.set_xlabel('Equivalent diameter (μm)', fontweight='bold')
+    ax2.set_ylabel('Frequency Counts', fontweight='bold')
     ax2.grid(True, alpha=0.3)
+
+    # Set x-ticks every 10 units instead of 20
+    ax2.set_xticks(np.arange(0, 160, 10))
 
     # Add sphericity overlay on second y-axis
     ax2_right = ax2.twinx()
@@ -264,20 +287,31 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     sorted_diameters = diameters[sorted_indices]
     sorted_sphericity = sphericity[sorted_indices]
 
-    # Plot sphericity scatter
-    ax2_right.scatter(sorted_diameters, sorted_sphericity, s=10,
+    # Add jitter to points to avoid vertical alignment
+    jitter = np.random.uniform(-1.5, 1.5, len(sorted_diameters))
+    jittered_diameters = sorted_diameters + jitter
+
+    # Plot sphericity scatter with jitter
+    ax2_right.scatter(jittered_diameters, sorted_sphericity, s=10,
                       color='black', alpha=0.3, marker='o')
-    ax2_right.set_ylabel('Sphericity')
+    ax2_right.set_ylabel('Sphericity', fontweight='bold')
     ax2_right.set_ylim(0, 1)
 
-    # Add statistics text
-    stats_text = f"Diameter: {avg_diameter:.2f} μm\nSphericity: {avg_sphericity:.2f}"
-    ax2.text(0.05, 0.95, stats_text, transform=ax2.transAxes,
-             fontsize=12, va='top', bbox=dict(boxstyle='round',
-                                              facecolor='lightblue', alpha=0.5))
+    # Add statistics text at the top center of the plot
+    stats_text = f"Diameter: {avg_diameter:.2f} μm | Sphericity: {avg_sphericity:.2f}"
+    ax2.text(0.5, 0.98, stats_text, transform=ax2.transAxes,
+             fontsize=11, va='top', ha='center',
+             bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.7))
 
     # Adjust layout
     plt.tight_layout()
+
+    # # Save figure
+    # plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
+    # print(f"Advanced pore analysis saved to {output_file}")
+    # plt.close()
+    # # Adjust layout
+    # plt.tight_layout()
 
     # Save figure
     plt.savefig(output_file, dpi=current_config.dpi, bbox_inches='tight')
