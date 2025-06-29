@@ -30,6 +30,8 @@ Mercury intrusion porosimetry (MIP) testing was conducted on all board samples t
 - **Density-Based Modeling**: Layered density representations showing spatial distribution of porosity
 - **Matrix-Filled Modeling**: Dense granular material representations simulating filled pore spaces
 - **Hybrid Visualizations**: Combined models showing both discrete pores and matrix material
+- **Advanced Statistical Analysis**: Volume histograms, sphericity analysis, and detailed pore characterization
+- **Custom Dimensional Analysis**: Flexible board dimensions for specialized applications
 - **Modular Architecture**: Clean, organized code structure with separate modules for each modeling approach
 
 ## Project Structure
@@ -92,81 +94,184 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install pandas numpy matplotlib scipy tqdm
 ```
 
-## Usage and Computational Modeling
+## Quick Start Commands
 
-1. Place your mercury intrusion porosimetry data CSV file in the `dataset/` directory as `pore_data.csv`
+The system provides a convenient command-line interface for rapid analysis through the `quick_config.sh` script. This allows researchers to quickly generate different types of visualizations without manual configuration.
 
-2. Run the computational modeling script:
+### Basic Analysis Commands
 
 ```bash
-python3 main.py
+# Default configuration (160×160×40 mm boards)
+./quick_config.sh default
+
+# Small specimen analysis (10±1mm diameter samples)
+./quick_config.sh small-specimen
+
+# Fast analysis with reduced quality for quick previews
+./quick_config.sh fast
+
+# Publication-quality high-resolution output
+./quick_config.sh publication
 ```
 
-3. Generated 3D models and visualizations will be saved in the `out/` directory
+### Dimensional Analysis Commands
 
-## Mercury Intrusion Porosimetry Data Format
+```bash
+# Large board analysis (300×300×80 mm)
+./quick_config.sh large-board
 
-The system processes experimental MIP data with the following structure:
+# Tall board analysis (160×160×80 mm - double thickness)
+./quick_config.sh tall
 
-- `diam_T1`, `int_T1`, `cond_T1`: Pore diameter, mercury intrusion volume, and conductivity data for T1 board
-- `diam_T2`, `int_T2`, `cond_T2`: Pore diameter, mercury intrusion volume, and conductivity data for T2 board
-- `diam_T3`, `int_T3`, `cond_T3`: Pore diameter, mercury intrusion volume, and conductivity data for T3 board
+# Custom vertical dimensions (40×40×160 mm)
+./quick_config.sh dimension
 
-## Computational Modeling Approaches
+# Cubic dimensions (100×100×100 mm)
+./quick_config.sh dim100
 
-### 1. Individual Board Pore Structure Modeling
+# Cubic with single-color pores (no size-based legends)
+./quick_config.sh dim100color0
 
-Detailed 3D computational models of pore architecture for each insulating board composition (T1, T2, T3), based on experimental MIP characterization data.
+# Cubic with single-color pores and advanced analysis
+./quick_config.sh dim100color0advanced
+```
+
+### Color-Enhanced Visualizations
+
+```bash
+# Colored pore size categories (pink/yellow/cyan)
+./quick_config.sh color
+
+# Alternative RGB color scheme (red/green/blue)
+./quick_config.sh color2
+```
+
+### Advanced Statistical Analysis
+
+```bash
+# Advanced pore analysis with statistical distributions
+./quick_config.sh advanced
+
+# Advanced analysis includes:
+# - Volume histogram analysis
+# - Sphericity distribution
+# - 3D statistical plots with colorbar
+# - Enhanced pore characterization
+```
+
+### Custom Parameter Analysis
+
+```bash
+# Custom configuration with specific parameters
+./quick_config.sh custom --diameter 15 --thickness 8 --dpi 600
+
+# Available custom parameters:
+# --length, --width, --thickness: Board dimensions (mm)
+# --diameter, --tolerance: For cylindrical specimens
+# --pores-all: Total pore count for all visualizations
+# --pores-individual, --pores-comparative: Specific visualization pore counts
+# --min-pore-radius, --max-pore-radius: Pore size range
+# --dpi: Output resolution
+# --figure-size: Plot dimensions (e.g., "12,8")
+# --elevation, --azimuth: 3D viewing angles
+# --alpha: Transparency level
+# --advanced-analysis: Enable/disable advanced features
+```
+
+## Command Reference Guide
+
+### Standard Configurations
+
+| Command          | Board Size (mm) | Pore Counts | Features       | Use Case         |
+| ---------------- | --------------- | ----------- | -------------- | ---------------- |
+| `default`        | 160×160×40      | Standard    | Basic analysis | General research |
+| `small-specimen` | Ø10×10          | Reduced     | High DPI       | Small samples    |
+| `publication`    | 160×160×40      | Standard    | 600 DPI, PDF   | Publications     |
+| `fast`           | 160×160×40      | Reduced     | 150 DPI        | Quick preview    |
+
+### Dimensional Variants
+
+| Command       | Board Size (mm) | Aspect Ratio | Specialty            |
+| ------------- | --------------- | ------------ | -------------------- |
+| `large-board` | 300×300×80      | 3.75:3.75:1  | Large specimens      |
+| `tall`        | 160×160×80      | 2:2:1        | Thick boards         |
+| `dimension`   | 40×40×160       | 0.25:0.25:1  | Vertical orientation |
+| `dim100`      | 100×100×100     | 1:1:1        | Cubic specimens      |
+
+### Advanced Analysis Features
+
+| Command                | Color Scheme     | Legends    | Advanced Stats | Target Application        |
+| ---------------------- | ---------------- | ---------- | -------------- | ------------------------- |
+| `color`                | Pink/Yellow/Cyan | Size-based | No             | Color-coded visualization |
+| `color2`               | Red/Green/Blue   | Size-based | No             | High-contrast analysis    |
+| `advanced`             | Red/Green/Blue   | Size-based | Yes            | Statistical analysis      |
+| `dim100color0`         | Sample-specific  | None       | No             | Clean presentation        |
+| `dim100color0advanced` | Sample-specific  | None       | Yes            | Complete analysis         |
+
+## Output File Structure
+
+Each analysis command generates a comprehensive set of visualization files:
+
+### Standard Output Files
+
+- **Individual Board Models**:
+  - `T1_individual_clean.png`, `T2_individual_clean.png`, `T3_individual_clean.png`: Cleaned individual board pore structure models
+  - `T1_individual.png`, `T2_individual.png`, `T3_individual.png`: Raw individual board pore structure models
+- **Comparative Analysis**:
+  - `combined_three_samples_clean.png`: Cleaned comparative analysis of all three board compositions
+  - `combined_three_samples.png`: Raw comparative analysis image
+- **Density-Based Modeling**:
+  - `density_filled_clean.png`: Cleaned density-based pore distribution model
+  - `density_filled.png`: Raw density-based model
+- **Matrix-Filled Modeling**:
+  - `matrix_filled_clean.png`: Cleaned matrix-filled pore modeling
+  - `matrix_filled.png`: Raw matrix-filled model
+- **Hybrid Modeling**:
+  - `T1_pores_matrix_combined.png`, `T2_pores_matrix_combined.png`, `T3_pores_matrix_combined.png`: T1, T2, T3 hybrid models
+  - `combined_pores_matrix_filled.png`: Combined hybrid models with pores and matrix material
+
+### Advanced Output Files
+
+- **Statistical Analysis Outputs** (for `advanced` command):
+
+  - Volume histograms and sphericity analysis results
+  - 3D statistical plots with color mapping
+  - Enhanced pore characterization data
+
+- **Custom Parameter Outputs**:
+  - Configurable outputs based on user-defined parameters (e.g., custom dimensions, pore sizes)
+
+## Example Visualizations
+
+### 1. Individual Board Pore Structure
+
+![T1 Board Pore Structure](out/T1_individual_clean.png)
+
+_Figure 1: 3D pore structure model of the T1 board composition, showing the distribution and connectivity of pores._
 
 ### 2. Comparative Pore Analysis
 
-Simultaneous visualization of all three board compositions enabling direct comparison of pore size distribution, connectivity, and spatial organization.
+![Comparative Analysis of T1, T2, T3 Boards](combined_three_samples_clean.png)
 
-### 3. Density-Based Pore Distribution Modeling
+_Figure 2: Side-by-side comparison of pore structures in T1, T2, and T3 boards, highlighting differences in pore size and distribution._
 
-Layered computational models representing spatial variation in pore density and size distribution throughout the board thickness and cross-sectional area.
+### 3. Density-Based Pore Distribution
 
-### 4. Matrix-Filled Pore Space Modeling
+![Density-Based Pore Distribution](out/density_filled_clean.png)
 
-Computational representation of fine granular material matrix completely filling the board volume, simulating dense packing of cement, vermiculite, and agricultural waste particles.
+_Figure 3: Density-based modeling results, illustrating the spatial distribution of pore density across the board thickness._
+
+### 4. Matrix-Filled Pore Modeling
+
+![Matrix-Filled Pore Modeling](matrix_filled_clean.png)
+
+_Figure 4: Matrix-filled pore space modeling, simulating the dense packing of materials within the board._
 
 ### 5. Hybrid Pore-Matrix Modeling
 
-Advanced computational models combining discrete pore structures with surrounding matrix material, providing comprehensive representation of both macro-porosity and matrix composition.
+![T1 Hybrid Model](T1_pores_matrix_combined.png)
 
-## Board Specifications and Geometry
-
-- **Dimensions**: 160mm × 160mm × 40mm (square insulating board)
-- **Coordinate System**: X-axis (length), Y-axis (width), Z-axis (thickness)
-- **Viewing Perspective**: Isometric projection (elevation=30°, azimuth=60°)
-- **Aspect Ratio**: 4:4:1 (optimized for thermal insulation applications)
-
-## Experimental Board Compositions
-
-- **T1 Board**: CSA cement matrix with expanded vermiculite aggregate
-- **T2 Board**: CSA cement with expanded vermiculite and rice husk ash supplementary cementitious material
-- **T3 Board**: CSA cement with vermiculite, rice husk ash, and moso bamboo fiber reinforcement
-
-## Technical Implementation
-
-- **Pore Classification System** (based on IUPAC standards):
-
-  - Micropores: < 2nm (not significant in this application)
-  - Mesopores: 2-50nm (important for thermal properties)
-  - Macropores: > 50nm (primary focus for mechanical and thermal analysis)
-  - Custom size ranges based on MIP data resolution
-
-- **Computational Framework**:
-
-  - 3D modeling engine: Matplotlib with advanced surface rendering
-  - Scientific computing: NumPy for mathematical operations and mesh generation
-  - Data processing: Pandas for experimental data management
-  - Progress monitoring: TQDM for computational progress tracking
-
-- **Geometric Modeling**:
-  - Spherical pore approximation based on equivalent diameter from MIP
-  - Spatial distribution algorithms incorporating physical constraints
-  - Boundary condition enforcement for realistic material representation
+_Figure 5: Hybrid model of the T1 board, combining discrete pore structures with the surrounding matrix material._
 
 ## Research Applications
 
@@ -222,7 +327,6 @@ If you use this computational modeling system in your research, please cite:
 - **Application Domain**: Sustainable construction materials with agricultural waste
 - **Computational Approach**: 3D pore structure modeling from experimental MIP data
 - **Scientific Impact**: Enhanced understanding of porosity-thermal property relationships
-
 
 ```bash
 
