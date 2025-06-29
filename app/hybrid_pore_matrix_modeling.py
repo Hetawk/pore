@@ -163,7 +163,7 @@ def create_combined_pores_matrix_visualization(
     # Get pore colors from config
     pore_colors = current_config.get_pore_colors()
 
-    # CHECK FOR SAMPLE-SPECIFIC COLOR OVERRIDE
+    # CHECK FOR SAMPLE-SPECIFIC COLOR OVERRIDE (for dim100color0advanced)
     if hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors:
         # Use sample-specific color for all pore types (no size-based distinction)
         sample_color = current_config.sample_pore_colors[sample_name]
@@ -416,5 +416,6 @@ def create_combined_three_samples_pores_matrix_visualization(diam1, intr1, diam2
     plt.close()
     print(
         f"Combined three-sample pores + sand visualization saved to {output_file}")
+    plt.close()
     plt.close()
     plt.close()

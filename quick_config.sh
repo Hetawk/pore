@@ -272,6 +272,16 @@ case "$1" in
         exec "$SCRIPT_DIR/run_dimension_100_color0.py"
     ;;
     
+    "dim100color0advanced")
+        echo -e "📊 Running Cubic Dimension Analysis (100×100×100mm) with Single-Color Pores and Advanced Analysis\n   - Length: 100mm\n   - Width: 100mm\n   - Thickness: 100mm\n   - Single uniform color per sample\n   - Advanced statistical analysis\n   - Volume histogram and sphericity analysis\n   - No legends displayed"
+        
+        # Make the wrapper script executable
+        chmod +x "$SCRIPT_DIR/run_dimension_100_color0_advanced.py"
+        
+        # Execute the special wrapper script for 100×100×100mm dimensions with single-color pores and advanced analysis
+        exec "$SCRIPT_DIR/run_dimension_100_color0_advanced.py"
+    ;;
+    
     *)
         cat << EOF
 🔧 Simple Pore Analysis - Quick Presets
@@ -292,6 +302,7 @@ Available Presets:
   dimension        Custom dimensions (40×40×160mm)
   dim100           Cubic dimensions (100×100×100mm)
   dim100color0     Cubic dimensions with single-color pores (no size-based legend)
+  dim100color0advanced  Cubic dimensions with single-color pores and advanced analysis
 
 Examples:
   $0 default
@@ -307,23 +318,12 @@ Examples:
   $0 dimension
   $0 dim100
   $0 dim100color0
+  $0 dim100color0advanced
 
 EOF
         exit 1
         ;;
 esac
-    if hasattr(self, 'enable_advanced_analysis') and self.enable_advanced_analysis:
-        # Adjust advanced analysis parameters for vertical board
-        self.advanced_stats_position = (0.5, 0.95)
-        self.advanced_colorbar_colormap = 'jet'  # Use a colormap with good contrast
-        self.advanced_tick_count = 10
-        self.advanced_bins_count = 30
-        
-        # Add special parameters to fix the advanced analysis visualization
-        self.advanced_vertical_layout = True
-        self.advanced_figure_layout = 'vertical'
-        self.advanced_colorbar_position = 'right'
-        
         # Parameters to specifically address white/blank visualization issue
         self.advanced_z_scale_factor = 4.0  # Scale z-axis for proper rendering
         self.advanced_plot_padding = 0.2  # Add padding around plots
