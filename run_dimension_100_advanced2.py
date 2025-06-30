@@ -82,7 +82,6 @@ def custom_100x100x100_advanced2_config(self):
     self.mesopore_color = "#FFFF00"   # Bright yellow (Mesopores)
     self.macropore_color = "#00FFFF"  # Bright cyan (Macropores)
 
-
     # Custom colorbar settings using pore colors
     self.use_custom_colorbar = True
     self.custom_colorbar_colors = [

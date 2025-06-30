@@ -241,21 +241,23 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     if hasattr(current_config, 'use_custom_colorbar') and current_config.use_custom_colorbar:
         # Create smooth gradient colormap using pore colors
         from matplotlib.colors import LinearSegmentedColormap
-        custom_colors = getattr(current_config, 'custom_colorbar_colors', ['#FF0000', '#00FF00', '#0000FF'])
-        
+        custom_colors = getattr(current_config, 'custom_colorbar_colors', [
+                                '#FF0000', '#00FF00', '#0000FF'])
+
         # Create a smooth gradient between the three colors
         # This creates transitions: Red -> Green -> Blue
         custom_cmap = LinearSegmentedColormap.from_list(
-            'custom_pore_gradient', 
-            custom_colors, 
+            'custom_pore_gradient',
+            custom_colors,
             N=256  # Number of color steps for smooth gradient
         )
-        
+
         volume_norm = Normalize(vmin=0, vmax=volumes.max())
         volume_sm = ScalarMappable(cmap=custom_cmap, norm=volume_norm)
         volume_sm.set_array([])
-        
-        print(f"[DEBUG] Using smooth gradient colorbar with colors: {custom_colors}")
+
+        print(
+            f"[DEBUG] Using smooth gradient colorbar with colors: {custom_colors}")
     else:
         # Use 'jet' colormap for vibrant, distinct colors (original behavior)
         volume_norm = Normalize(vmin=0, vmax=volumes.max())
@@ -283,7 +285,8 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
                 mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
                               markersize=12, label='Macropore'),
             ]
-            ax1.legend(handles=legend_handles, loc='upper right', title='Pore Types')
+            ax1.legend(handles=legend_handles,
+                       loc='upper right', title='Pore Types')
     # No legend for advanced2 configuration
 
     # Set viewing angle to match other visualizations

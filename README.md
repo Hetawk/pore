@@ -245,7 +245,7 @@ Each analysis command generates a comprehensive set of visualization files:
 
 ### 1. Individual Board Pore Structure
 
-![T1 Board Pore Structure](T1_individual_clean.png)
+![T1 Board Pore Structure](T2_individual_clean.png)
 
 _Figure 1: 3D pore structure model of the T1 board composition, showing the distribution and connectivity of pores._
 
