@@ -282,6 +282,16 @@ case "$1" in
         exec "$SCRIPT_DIR/run_dimension_100_color0_advanced.py"
     ;;
     
+    "advanced2")
+        echo -e "📊 Running Advanced Pore Analysis v2 (100×100×100mm) with Multi-Color Pores\n   - Length: 100mm\n   - Width: 100mm\n   - Thickness: 100mm\n   - Three distinct pore colors per sample\n   - Custom colorbar using pore colors\n   - Advanced statistical analysis\n   - Volume histogram and sphericity analysis\n   - Size-based legends displayed"
+        
+        # Make the wrapper script executable
+        chmod +x "$SCRIPT_DIR/run_dimension_100_advanced2.py"
+        
+        # Execute the special wrapper script for advanced analysis v2
+        exec "$SCRIPT_DIR/run_dimension_100_advanced2.py"
+    ;;
+    
     *)
         cat << EOF
 🔧 Simple Pore Analysis - Quick Presets
@@ -303,6 +313,7 @@ Available Presets:
   dim100           Cubic dimensions (100×100×100mm)
   dim100color0     Cubic dimensions with single-color pores (no size-based legend)
   dim100color0advanced  Cubic dimensions with single-color pores and advanced analysis
+  advanced2        Advanced analysis v2 with multi-color pores and custom colorbar
 
 Examples:
   $0 default
@@ -319,23 +330,12 @@ Examples:
   $0 dim100
   $0 dim100color0
   $0 dim100color0advanced
+  $0 advanced2
 
 EOF
         exit 1
         ;;
 esac
-        # Parameters to specifically address white/blank visualization issue
-        self.advanced_z_scale_factor = 4.0  # Scale z-axis for proper rendering
-        self.advanced_plot_padding = 0.2  # Add padding around plots
-        self.advanced_colorbar_formatter = '%.2e'  # Scientific notation for colorbar values
-    
-    print("\nSimple Pore Analysis - Configuration Override")
-    print("==============================================")
-    print("Applying overrides:")
-    print("  - Board length: 40mm")
-    print("  - Board width: 40mm")
-    print("  - Board thickness: 160mm")
-    print("  - Pore counts:")
     print("    * Individual: 100")
     print("    * Comparative: 50")
     print("    * Density: 75")

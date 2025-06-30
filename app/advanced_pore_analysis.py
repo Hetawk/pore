@@ -237,10 +237,30 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     advanced_params = current_config.get_advanced_analysis_params()
 
     # Create a colorbar for volume visualization
-    # Use 'jet' colormap for vibrant, distinct colors
-    volume_norm = Normalize(vmin=0, vmax=volumes.max())
-    volume_sm = ScalarMappable(cmap='jet', norm=volume_norm)
-    volume_sm.set_array([])  # Required for older matplotlib versions
+    # Check if custom colorbar is enabled
+    if hasattr(current_config, 'use_custom_colorbar') and current_config.use_custom_colorbar:
+        # Create smooth gradient colormap using pore colors
+        from matplotlib.colors import LinearSegmentedColormap
+        custom_colors = getattr(current_config, 'custom_colorbar_colors', ['#FF0000', '#00FF00', '#0000FF'])
+        
+        # Create a smooth gradient between the three colors
+        # This creates transitions: Red -> Green -> Blue
+        custom_cmap = LinearSegmentedColormap.from_list(
+            'custom_pore_gradient', 
+            custom_colors, 
+            N=256  # Number of color steps for smooth gradient
+        )
+        
+        volume_norm = Normalize(vmin=0, vmax=volumes.max())
+        volume_sm = ScalarMappable(cmap=custom_cmap, norm=volume_norm)
+        volume_sm.set_array([])
+        
+        print(f"[DEBUG] Using smooth gradient colorbar with colors: {custom_colors}")
+    else:
+        # Use 'jet' colormap for vibrant, distinct colors (original behavior)
+        volume_norm = Normalize(vmin=0, vmax=volumes.max())
+        volume_sm = ScalarMappable(cmap='jet', norm=volume_norm)
+        volume_sm.set_array([])
 
     # Add colorbar that shows volume ranges
     cbar = plt.colorbar(volume_sm, ax=ax1, pad=0.1, shrink=0.7)
@@ -252,19 +272,19 @@ def create_advanced_pore_analysis(diam, intr, sample_name, output_file):
     cbar.set_ticks(tick_values)
     cbar.set_ticklabels([f"{v:.4f}" for v in tick_values])
 
-    # Add legend for pore size categories - ONLY if not using sample-specific colors
-    if not (hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors):
-        legend_handles = [
-            mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
-                          markersize=12, label='Micropore'),
-            mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
-                          markersize=12, label='Mesopore'),
-            mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
-                          markersize=12, label='Macropore'),
-        ]
-        ax1.legend(handles=legend_handles,
-                   loc='upper right', title='Pore Types')
-    # If using sample-specific colors, don't show legend
+    # Add legend for pore size categories - ONLY if not using advanced2 configuration
+    if not (hasattr(current_config, 'use_custom_colorbar') and current_config.use_custom_colorbar):
+        if not (hasattr(current_config, 'sample_pore_colors') and sample_name in current_config.sample_pore_colors):
+            legend_handles = [
+                mlines.Line2D([], [], color=micropore_color, marker='o', linestyle='None',
+                              markersize=12, label='Micropore'),
+                mlines.Line2D([], [], color=mesopore_color, marker='o', linestyle='None',
+                              markersize=12, label='Mesopore'),
+                mlines.Line2D([], [], color=macropore_color, marker='o', linestyle='None',
+                              markersize=12, label='Macropore'),
+            ]
+            ax1.legend(handles=legend_handles, loc='upper right', title='Pore Types')
+    # No legend for advanced2 configuration
 
     # Set viewing angle to match other visualizations
     ax1.view_init(elev=current_config.view_elevation,
