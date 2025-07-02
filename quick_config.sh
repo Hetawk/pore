@@ -292,6 +292,26 @@ case "$1" in
         exec "$SCRIPT_DIR/run_dimension_100_advanced2.py"
     ;;
     
+    "advanced3")
+        echo -e "📊 Running Advanced Pore Analysis v3 (160×160×80mm) with Multi-Color Pores\n   - Length: 160mm\n   - Width: 160mm\n   - Thickness: 80mm\n   - Three distinct pore colors per sample\n   - Custom colorbar using pore colors\n   - Advanced statistical analysis\n   - Volume histogram and sphericity analysis\n   - Size-based legends displayed"
+        
+        # Make the wrapper script executable
+        chmod +x "$SCRIPT_DIR/run_dimension_160x160x80_advanced3.py"
+        
+        # Execute the special wrapper script for advanced analysis v3
+        exec "$SCRIPT_DIR/run_dimension_160x160x80_advanced3.py"
+    ;;
+    
+    "advanced4")
+        echo -e "📊 Running Advanced Pore Analysis v4 (160×160×40mm) with Multi-Color Pores\n   - Length: 160mm\n   - Width: 160mm\n   - Thickness: 40mm\n   - Three distinct pore colors per sample\n   - Custom colorbar using pore colors\n   - Advanced statistical analysis\n   - Volume histogram and sphericity analysis\n   - Size-based legends displayed"
+        
+        # Make the wrapper script executable
+        chmod +x "$SCRIPT_DIR/run_dimension_160x160x40_advanced4.py"
+        
+        # Execute the special wrapper script for advanced analysis v4
+        exec "$SCRIPT_DIR/run_dimension_160x160x40_advanced4.py"
+    ;;
+    
     *)
         cat << EOF
 🔧 Simple Pore Analysis - Quick Presets
@@ -313,7 +333,9 @@ Available Presets:
   dim100           Cubic dimensions (100×100×100mm)
   dim100color0     Cubic dimensions with single-color pores (no size-based legend)
   dim100color0advanced  Cubic dimensions with single-color pores and advanced analysis
-  advanced2        Advanced analysis v2 with multi-color pores and custom colorbar
+  advanced2        Advanced analysis v2 with multi-color pores and custom colorbar (100×100×100mm)
+  advanced3        Advanced analysis v3 with multi-color pores and custom colorbar (160×160×80mm)
+  advanced4        Advanced analysis v4 with multi-color pores and custom colorbar (160×160×40mm)
 
 Examples:
   $0 default
@@ -331,35 +353,13 @@ Examples:
   $0 dim100color0
   $0 dim100color0advanced
   $0 advanced2
+  $0 advanced3
+  $0 advanced4
 
 EOF
         exit 1
         ;;
 esac
-    print("    * Individual: 100")
-    print("    * Comparative: 50")
-    print("    * Density: 75")
-    print("    * Matrix: 200")
-    print("    * Hybrid: 200")
-    print("  - Min pore radius: 0.005")
-    print("  - Max pore radius: 0.02")
-    print("  - Figure size: 8,10")
-    print("  - DPI: 150")
-    print("  - View elevation: 30°")
-    print("  - View azimuth: 60°")
-    print("  - Alpha transparency: 0.9")
-    print("  - Output format: png")
-    if hasattr(self, 'enable_advanced_analysis') and self.enable_advanced_analysis:
-        print("  - Advanced analysis: Enabled with vertical board optimizations")
-    print("\n")
-
-# Replace the default config loader with our custom one
-MaterialConfig._load_default_config = custom_dimension_config
-
-# Fix for get_advanced_analysis_params method to ensure proper rendering with new dimensions
-original_get_advanced_params = MaterialConfig.get_advanced_analysis_params
-
-def enhanced_get_advanced_params(self):
     params = original_get_advanced_params(self)
     
     # If we have the vertical 40×40×160 configuration, update advanced params
